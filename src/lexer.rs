@@ -10,7 +10,7 @@ const SHORT_PREFIX: &str = "-";
 const VALUE_SEPARATOR: &str = "=";
 
 /// Parsed token.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Token {
   ShortOption(char),
   LongOption(String),
@@ -18,77 +18,118 @@ pub enum Token {
   OptionTerminator,
 }
 
-/// Parses arguments into lexical tokens.
-pub fn parse<I, S>(input: I) -> Result<Vec<Token>>
-where
-  I: IntoIterator<Item = S>,
-  S: AsRef<str>,
-{
-  let mut tokens = vec![];
-  for item in input {
-    let text = item.as_ref();
-    if let Some(s) = text.strip_prefix(LONG_PREFIX) {
-      if s.is_empty() {
-        // When the string is empty then return option terminator.
-        tokens.push(Token::OptionTerminator);
-      } else {
-        // Split long option around the equal sign to extract possible value definition.
-        let parts = s.split(VALUE_SEPARATOR).map(|part| part.to_string()).collect::<Vec<String>>();
-        // Parts may not start or end with whitespace.
-        for part in &parts {
-          if part.starts_with(" ") {
-            return Err(ClarsError::new("whitespace before"));
-          }
-          if part.ends_with(" ") {
-            return Err(ClarsError::new("whitespace after"));
-          }
-        }
-        // The valid number of parts is 1 or 2.
-        match parts.len() {
-          1 => {
-            tokens.push(Token::LongOption(parts[0].to_owned()));
-          }
-          2 => {
-            tokens.push(Token::LongOption(parts[0].to_owned()));
-            tokens.push(Token::Value(parts[1].to_owned()));
-          }
-          _ => return Err(ClarsError::new("too many equal signs")),
-        }
-      }
-    } else if let Some(s) = text.strip_prefix(SHORT_PREFIX) {
-      if s.is_empty() {
-        tokens.push(Token::Value(SHORT_PREFIX.to_string()));
-      } else {
-        // Split long option around the equal sign to extract possible value definition.
-        let parts = s.split(VALUE_SEPARATOR).map(|part| part.to_string()).collect::<Vec<String>>();
-        // Parts may not start or end with whitespace.
-        for part in &parts {
-          if part.starts_with(" ") {
-            return Err(ClarsError::new("whitespace before"));
-          }
-          if part.ends_with(" ") {
-            return Err(ClarsError::new("whitespace after"));
-          }
-        }
-        // The valid number of parts is 1 or 2.
-        match parts.len() {
-          1 => {
-            for ch in parts[0].chars() {
-              tokens.push(Token::ShortOption(ch));
-            }
-          }
-          2 => {
-            for ch in parts[0].chars() {
-              tokens.push(Token::ShortOption(ch));
-            }
-            tokens.push(Token::Value(parts[1].to_owned()));
-          }
-          _ => return Err(ClarsError::new("too many equal signs")),
-        }
-      }
-    } else {
-      tokens.push(Token::Value(text.to_string()));
+pub struct Lexer {
+  tokens: Vec<Token>,
+  consumed_option_terminator: bool,
+}
+
+impl Default for Lexer {
+  fn default() -> Self {
+    Self::new()
+  }
+}
+
+impl Lexer {
+  pub fn new() -> Self {
+    Self {
+      tokens: vec![],
+      consumed_option_terminator: false,
     }
   }
-  Ok(tokens)
+
+  /// Parses arguments into lexical tokens.
+  pub fn parse<I, S>(&mut self, input: I) -> Result<&[Token]>
+  where
+    I: IntoIterator<Item = S>,
+    S: AsRef<str>,
+  {
+    for item in input {
+      let text = item.as_ref();
+      if self.consumed_option_terminator {
+        self.tokens.push(Token::Value(text.to_string()));
+      } else if let Some(s) = text.strip_prefix(LONG_PREFIX) {
+        self.parse_long_option(s)?;
+      } else if let Some(s) = text.strip_prefix(SHORT_PREFIX) {
+        self.parse_short_option(s)?
+      } else {
+        self.tokens.push(Token::Value(text.to_string()));
+      }
+    }
+    Ok(&self.tokens)
+  }
+
+  fn parse_long_option(&mut self, s: &str) -> Result<()> {
+    if s.is_empty() {
+      // When the string is empty then return option terminator.
+      self.tokens.push(Token::OptionTerminator);
+      self.consumed_option_terminator = true;
+    } else {
+      // Parse option name with possible value.
+      let (option, opt_value) = self.parse_parts(s)?;
+      self.validate_long_name(&option)?;
+      self.tokens.push(Token::LongOption(option));
+      if let Some(value) = opt_value {
+        self.tokens.push(Token::Value(value));
+      }
+    }
+    Ok(())
+  }
+
+  fn parse_short_option(&mut self, s: &str) -> Result<()> {
+    if s.is_empty() {
+      self.tokens.push(Token::Value(SHORT_PREFIX.to_string()));
+    } else {
+      // Parse option name with possible value.
+      let (option, opt_value) = self.parse_parts(s)?;
+      for ch in option.chars() {
+        self.validate_short_name(ch)?;
+        self.tokens.push(Token::ShortOption(ch));
+      }
+      if let Some(value) = opt_value {
+        self.tokens.push(Token::Value(value));
+      }
+    }
+    Ok(())
+  }
+
+  fn parse_parts(&self, s: &str) -> Result<(String, Option<String>)> {
+    // Split around the value separator to extract possible value for option.
+    let parts = s.split(VALUE_SEPARATOR).map(|part| part.to_string()).collect::<Vec<String>>();
+    // Parts may not start or end with whitespaces.
+    for part in &parts {
+      if part.starts_with(" ") {
+        return Err(ClarsError::new("whitespace before"));
+      }
+      if part.ends_with(" ") {
+        return Err(ClarsError::new("whitespace after"));
+      }
+    }
+    match parts.len() {
+      1 => Ok((parts[0].clone(), None)),
+      2 => Ok((parts[0].clone(), Some(parts[1].clone()))),
+      _ => Err(ClarsError::new("too many equal signs")),
+    }
+  }
+
+  fn validate_long_name(&self, s: &str) -> Result<()> {
+    for (index, ch) in s.chars().enumerate() {
+      if index == 0 {
+        if !ch.is_ascii_alphabetic() {
+          return Err(ClarsError::new("long option name must start with a letter"));
+        }
+      } else {
+        if !(ch.is_ascii_alphanumeric() || ch == '-') {
+          return Err(ClarsError::new("long option name must contain letters, digits or hyphens"));
+        }
+      }
+    }
+    Ok(())
+  }
+
+  fn validate_short_name(&self, ch: char) -> Result<()> {
+    if !ch.is_ascii_alphanumeric() {
+      return Err(ClarsError::new("short option must be a letter or digit"));
+    }
+    Ok(())
+  }
 }
