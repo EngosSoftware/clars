@@ -26,10 +26,8 @@ where
 {
   let mut tokens = vec![];
   for item in input {
-    let mut s = item.as_ref();
-    if s.starts_with(LONG_PREFIX) {
-      // Remove the prefix of the long option.
-      s = s.strip_prefix(LONG_PREFIX).unwrap();
+    let text = item.as_ref();
+    if let Some(s) = text.strip_prefix(LONG_PREFIX) {
       if s.is_empty() {
         // When the string is empty then return option terminator.
         tokens.push(Token::OptionTerminator);
@@ -57,9 +55,7 @@ where
           _ => return Err(ClarsError::new("too many equal signs")),
         }
       }
-    } else if s.starts_with(SHORT_PREFIX) {
-      // Remove the prefix of the short option.
-      s = s.strip_prefix(SHORT_PREFIX).unwrap();
+    } else if let Some(s) = text.strip_prefix(SHORT_PREFIX) {
       if s.is_empty() {
         tokens.push(Token::Value(SHORT_PREFIX.to_string()));
       } else {
@@ -91,7 +87,7 @@ where
         }
       }
     } else {
-      tokens.push(Token::Value(s.to_string()));
+      tokens.push(Token::Value(text.to_string()));
     }
   }
   Ok(tokens)
