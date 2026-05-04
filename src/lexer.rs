@@ -12,9 +12,13 @@ const VALUE_SEPARATOR: &str = "=";
 /// Parsed token.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Token {
-  ShortOption(char),
-  LongOption(String),
-  Value(String),
+  /// Short option with optional value.
+  ShortOption(char, Option<String>),
+  /// Long option with optional value.
+  LongOption(String, Option<String>),
+  /// Argument.
+  Argument(String),
+  /// Option terminator.
   OptionTerminator,
 }
 
@@ -46,13 +50,13 @@ impl Lexer {
     for item in input {
       let text = item.as_ref();
       if self.consumed_option_terminator {
-        self.tokens.push(Token::Value(text.to_string()));
+        self.tokens.push(Token::Argument(text.to_string()));
       } else if let Some(s) = text.strip_prefix(LONG_PREFIX) {
         self.parse_long_option(s)?;
       } else if let Some(s) = text.strip_prefix(SHORT_PREFIX) {
         self.parse_short_option(s)?
       } else {
-        self.tokens.push(Token::Value(text.to_string()));
+        self.tokens.push(Token::Argument(text.to_string()));
       }
     }
     Ok(&self.tokens)
@@ -65,28 +69,29 @@ impl Lexer {
       self.consumed_option_terminator = true;
     } else {
       // Parse option name with possible value.
-      let (option, opt_value) = self.parse_parts(s)?;
+      let (option, value) = self.parse_parts(s)?;
       self.validate_long_name(&option)?;
-      self.tokens.push(Token::LongOption(option));
-      if let Some(value) = opt_value {
-        self.tokens.push(Token::Value(value));
-      }
+      self.tokens.push(Token::LongOption(option, value));
     }
     Ok(())
   }
 
   fn parse_short_option(&mut self, s: &str) -> Result<()> {
     if s.is_empty() {
-      self.tokens.push(Token::Value(SHORT_PREFIX.to_string()));
+      self.tokens.push(Token::Argument(SHORT_PREFIX.to_string()));
     } else {
       // Parse option name with possible value.
-      let (option, opt_value) = self.parse_parts(s)?;
-      for ch in option.chars() {
+      let (option, value) = self.parse_parts(s)?;
+      let mut chars = option.chars().peekable();
+      loop {
+        let ch = chars.next().unwrap();
         self.validate_short_name(ch)?;
-        self.tokens.push(Token::ShortOption(ch));
-      }
-      if let Some(value) = opt_value {
-        self.tokens.push(Token::Value(value));
+        if chars.peek().is_none() {
+          self.tokens.push(Token::ShortOption(ch, value));
+          break;
+        } else {
+          self.tokens.push(Token::ShortOption(ch, None));
+        }
       }
     }
     Ok(())
@@ -94,7 +99,10 @@ impl Lexer {
 
   fn parse_parts(&self, s: &str) -> Result<(String, Option<String>)> {
     // Split around the value separator to extract possible value for option.
-    let parts = s.split(VALUE_SEPARATOR).map(|part| part.to_string()).collect::<Vec<String>>();
+    let parts = s
+      .split(VALUE_SEPARATOR)
+      .map(|part| part.to_string())
+      .collect::<Vec<String>>();
     // Parts may not start or end with whitespaces.
     for part in &parts {
       if part.starts_with(" ") {
@@ -119,7 +127,9 @@ impl Lexer {
         }
       } else {
         if !(ch.is_ascii_alphanumeric() || ch == '-') {
-          return Err(ClarsError::new("long option name must contain letters, digits or hyphens"));
+          return Err(ClarsError::new(
+            "long option name must contain letters, digits or hyphens",
+          ));
         }
       }
     }

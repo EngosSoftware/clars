@@ -42,6 +42,12 @@ tasks:
       - cmd: cargo +stable llvm-cov clean
       - cmd: cargo +stable llvm-cov --html --open
 
+  cov-badge:
+    desc: Generates the detailed code coverage badge
+    cmds:
+      - cmd: cargo +stable llvm-cov clean
+      - cmd: cargo +stable llvm-cov --no-cfg-coverage --json --summary-only | coverio -l coverage -c --tag cov-badge
+
   doc:
     desc: Generates documentation
     cmds:
@@ -66,6 +72,12 @@ tasks:
     desc: Runs the code formatter
     cmds:
       - cmd: cargo +nightly fmt
+
+  readme:
+    desc: Regenerates README.md file
+    cmds:
+      - cmd: magg readme
+      - task: cov-badge
 
   test:
     desc: Runs tests in debug mode
