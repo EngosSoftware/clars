@@ -1,29 +1,30 @@
 use super::*;
 
-fn option(takes_value: bool, default_value: Option<String>, default_missing_value: Option<String>) -> CliOption {
-  CliOption {
-    name: "help".to_string(),
-    short_name: Some('h'),
-    long_name: Some("help".to_string()),
-    standalone: false,
-    default_value,
-    default_missing_value,
-    takes_value,
+fn option(takes_value: bool, default_value: Option<String>, default_missing_value: Option<String>) -> ClarOption {
+  let mut option = ClarOption::new("help", 'h', "help");
+  if takes_value {
+    option = option.takes_value("VALUE")
   }
+  if let Some(value) = default_value {
+    option = option.default_value(value);
+  }
+  if let Some(value) = default_missing_value {
+    option = option.default_missing_value(value);
+  }
+  option
 }
 
-fn eq<I, S>(command_line: I, input: &Input) -> Result<(bool, usize, Vec<Option<String>>)>
+fn eq<I, S>(command_line: I, input: &Input) -> ClarResult<(bool, usize, Vec<Option<String>>)>
 where
   I: IntoIterator<Item = S>,
   S: AsRef<str>,
 {
-  let mut clar = Clar::new("clars");
-  clar.add_options(vec![option(
+  let clar = Clar::new(APP).options(vec![option(
     input.takes_value,
     input.default_value.clone(),
     input.default_missing_value.clone(),
   )]);
-  let matches = clar.clone().resolve(command_line)?;
+  let matches = clar.resolve(command_line).map_err(|e| e.to_owned())?;
   Ok((
     matches.is_present("help"),
     matches.get_count("help"),
@@ -67,8 +68,8 @@ fn expected_error_message(input: &Input) -> Option<&str> {
     input.value_provided,
     input.default_missing_value.is_some(),
   ) {
-    (true, false, false) if input.appearances > 0 => Some("option must have a value"),
-    (false, true, _) if input.appearances > 0 => Some("option must not have a value"),
+    (true, false, false) if input.appearances > 0 => Some("a value is required for '-h <VALUE>' but none was supplied"),
+    (false, true, _) if input.appearances > 0 => Some("option '-h' does not accept a value"),
     _ => None,
   }
 }

@@ -1,4 +1,5 @@
 use crate::errors::*;
+use std::collections::VecDeque;
 
 /// Long option prefix.
 const LONG_PREFIX: &str = "--";
@@ -6,8 +7,8 @@ const LONG_PREFIX: &str = "--";
 /// Short option prefix.
 const SHORT_PREFIX: &str = "-";
 
-/// Option value separator.
-const VALUE_SEPARATOR: &str = "=";
+/// Separator between option label and its associated value.
+const VALUE_SEPARATOR: char = '=';
 
 /// Parsed token.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -18,127 +19,96 @@ pub enum Token {
   LongOption(String, Option<String>),
   /// Argument.
   Argument(String),
-  /// Option terminator.
-  OptionTerminator,
+  /// Option terminator with the following arguments.
+  OptionTerminator(Vec<String>),
 }
 
+#[derive(Debug, Clone, Default)]
 pub struct Lexer {
-  tokens: Vec<Token>,
-  consumed_option_terminator: bool,
-}
-
-impl Default for Lexer {
-  fn default() -> Self {
-    Self::new()
-  }
+  tokens: VecDeque<Token>,
 }
 
 impl Lexer {
-  pub fn new() -> Self {
-    Self {
-      tokens: vec![],
-      consumed_option_terminator: false,
-    }
-  }
-
   /// Parses arguments into lexical tokens.
-  pub fn parse<I, S>(&mut self, input: I) -> Result<&[Token]>
+  pub fn parse<I, S>(mut self, items: I) -> ClarResult<VecDeque<Token>>
   where
     I: IntoIterator<Item = S>,
     S: AsRef<str>,
   {
-    for item in input {
-      let text = item.as_ref();
-      if self.consumed_option_terminator {
-        self.tokens.push(Token::Argument(text.to_string()));
-      } else if let Some(s) = text.strip_prefix(LONG_PREFIX) {
+    for item in items {
+      let input = item.as_ref();
+      if let Some(Token::OptionTerminator(values)) = self.tokens.back_mut() {
+        values.push(input.to_string());
+      } else if let Some(s) = input.strip_prefix(LONG_PREFIX) {
         self.parse_long_option(s)?;
-      } else if let Some(s) = text.strip_prefix(SHORT_PREFIX) {
+      } else if let Some(s) = input.strip_prefix(SHORT_PREFIX) {
         self.parse_short_option(s)?
       } else {
-        self.tokens.push(Token::Argument(text.to_string()));
+        self.tokens.push_back(Token::Argument(input.to_string()));
       }
     }
-    Ok(&self.tokens)
+    Ok(self.tokens)
   }
 
-  fn parse_long_option(&mut self, s: &str) -> Result<()> {
-    if s.is_empty() {
-      // When the string is empty then return option terminator.
-      self.tokens.push(Token::OptionTerminator);
-      self.consumed_option_terminator = true;
+  fn parse_long_option(&mut self, input: &str) -> ClarResult<()> {
+    if input.is_empty() {
+      // When the input is empty then encountered option terminator.
+      self.tokens.push_back(Token::OptionTerminator(vec![]));
     } else {
-      // Parse option name with possible value.
-      let (option, value) = self.parse_parts(s)?;
-      self.validate_long_name(&option)?;
-      self.tokens.push(Token::LongOption(option, value));
+      // Parse option name with optional associated value.
+      let (option, value) = self.parse_value(input);
+      self.validate_long_label(&option)?;
+      self.tokens.push_back(Token::LongOption(option, value));
     }
     Ok(())
   }
 
-  fn parse_short_option(&mut self, s: &str) -> Result<()> {
-    if s.is_empty() {
-      self.tokens.push(Token::Argument(SHORT_PREFIX.to_string()));
+  fn parse_short_option(&mut self, input: &str) -> ClarResult<()> {
+    if input.is_empty() {
+      self.tokens.push_back(Token::Argument(SHORT_PREFIX.to_string()));
     } else {
-      // Parse option name with possible value.
-      let (option, value) = self.parse_parts(s)?;
+      // Parse option name with optional associated value.
+      let (option, value) = self.parse_value(input);
       let mut chars = option.chars().peekable();
       loop {
         let ch = chars.next().unwrap();
-        self.validate_short_name(ch)?;
+        self.validate_short_label(ch)?;
         if chars.peek().is_none() {
-          self.tokens.push(Token::ShortOption(ch, value));
+          self.tokens.push_back(Token::ShortOption(ch, value));
           break;
         } else {
-          self.tokens.push(Token::ShortOption(ch, None));
+          self.tokens.push_back(Token::ShortOption(ch, None));
         }
       }
     }
     Ok(())
   }
 
-  fn parse_parts(&self, s: &str) -> Result<(String, Option<String>)> {
-    // Split around the value separator to extract possible value for option.
-    let parts = s
-      .split(VALUE_SEPARATOR)
-      .map(|part| part.to_string())
-      .collect::<Vec<String>>();
-    // Parts may not start or end with whitespaces.
-    for part in &parts {
-      if part.starts_with(" ") {
-        return Err(ClarsError::new("whitespace before"));
-      }
-      if part.ends_with(" ") {
-        return Err(ClarsError::new("whitespace after"));
-      }
-    }
-    match parts.len() {
-      1 => Ok((parts[0].clone(), None)),
-      2 => Ok((parts[0].clone(), Some(parts[1].clone()))),
-      _ => Err(ClarsError::new("too many equal signs")),
+  fn parse_value(&self, input: &str) -> (String, Option<String>) {
+    match input.split_once(VALUE_SEPARATOR) {
+      Some((before, after)) => (before.to_string(), Some(after.to_string())),
+      None => (input.to_string(), None),
     }
   }
 
-  fn validate_long_name(&self, s: &str) -> Result<()> {
-    for (index, ch) in s.chars().enumerate() {
+  fn validate_long_label(&self, label: &str) -> ClarResult<()> {
+    for (index, ch) in label.chars().enumerate() {
       if index == 0 {
         if !ch.is_ascii_alphabetic() {
-          return Err(ClarsError::new("long option name must start with a letter"));
+          return Err(err_long_option_must_start_with_letter(label.to_string()));
         }
       } else {
         if !(ch.is_ascii_alphanumeric() || ch == '-') {
-          return Err(ClarsError::new(
-            "long option name must contain letters, digits or hyphens",
-          ));
+          return Err(err_long_option_must_contain_letters_digits_hyphens(label.to_string()));
         }
       }
     }
     Ok(())
   }
 
-  fn validate_short_name(&self, ch: char) -> Result<()> {
+  fn validate_short_label(&self, ch: char) -> ClarResult<()> {
     if !ch.is_ascii_alphanumeric() {
-      return Err(ClarsError::new("short option must be a letter or digit"));
+      return Err(err_short_option_must_be_letter_or_digit(ch));
     }
     Ok(())
   }

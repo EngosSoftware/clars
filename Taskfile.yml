@@ -30,6 +30,13 @@ tasks:
       - cmd: cargo +stable llvm-cov clean
       - cmd: cargo +stable llvm-cov
 
+  cov-examples:
+    desc: Generates code coverage report in text format from examples
+    cmds:
+      - cmd: cargo +stable llvm-cov clean
+      - cmd: cargo +stable llvm-cov run --example sedi --no-report
+      - cmd: cargo +stable llvm-cov report
+
   cov-html:
     desc: Generates code coverage report in HTML format
     cmds:

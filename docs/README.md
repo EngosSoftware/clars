@@ -1,6 +1,5 @@
-# Command line argument resolution system
+# Command line arguments resolution system
 
 ## Overview
 
-> [!NOTE]
-> WORK IN PROGRESS
+**WORK IN PROGRESS**

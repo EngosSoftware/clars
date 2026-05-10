@@ -15,7 +15,7 @@
 
 [crates-badge]: https://img.shields.io/crates/v/clars.svg
 [crates-url]: https://crates.io/crates/clars
-[cov-badge]: https://img.shields.io/badge/coverage-98%25%20%E2%94%82%20100%25%20%E2%94%82%2098%25-21b577.svg
+[cov-badge]: https://img.shields.io/badge/coverage-74%25%20%E2%94%82%2077%25%20%E2%94%82%2077%25-f4b01b.svg
 [cov-url]: https://crates.io/crates/coverio
 [build-badge-linux-gnu]: https://github.com/EngosSoftware/clars/actions/workflows/build-linux-gnu.yml/badge.svg
 [build-badge-linux-musl]: https://github.com/EngosSoftware/clars/actions/workflows/build-linux-musl.yml/badge.svg
@@ -37,12 +37,11 @@
 [es-url]: https://engos.de
 [repository-url]: https://github.com/EngosSoftware/clars
 
-# Command line argument resolution system
+# Command line arguments resolution system
 
 ## Overview
 
-> [!NOTE]
-> WORK IN PROGRESS
+**WORK IN PROGRESS**
 
 ## License
 
