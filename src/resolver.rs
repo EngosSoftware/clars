@@ -1,24 +1,26 @@
-use crate::errors::{ClarDiagnostic, ClarDiagnosticResult};
+use crate::ClarResult;
+use crate::errors::{ClarDiagnostic, ClarDiagnosticResult, err_exceeded_max_option_occurrences};
 use crate::evaluator::{
-  Evaluator, ev_and_then, ev_argument, ev_consumed, ev_long_option, ev_one, ev_option_terminator, ev_sequence,
-  ev_short_option, ev_stop_on_one, ev_subcommand, ev_zero_or_more_options,
+  Evaluator, Value, ev_argument, ev_command_and_then, ev_consumed, ev_long_option, ev_one, ev_option_terminator, ev_sequence, ev_short_option, ev_stop_on_one,
+  ev_zero_or_more_options,
 };
 use crate::lexer::{Lexer, Token};
 use crate::matches::ClarMatches;
-use crate::messages::get_error;
-use crate::model::{ClarArgument, ClarCommand, ClarItem, ClarOption, ClarTerminator, update_paths};
+use crate::messages::{get_cfg_error_text, get_error_text};
+use crate::model::{ClarArgument, ClarCommand, ClarDefinition, ClarItem, ClarOption, ClarTerminator};
+use crate::path::ClarPath;
 use antex::ColorMode;
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 
-/// Command line arguments resolver.
+/// Command-line arguments resolver.
 #[derive(Debug, Clone)]
 pub struct Clar {
   /// Application name.
   app: String,
   /// Application description.
   description: Option<String>,
-  /// Command line items (options, subcommands, arguments) to be resolved.
-  items: Vec<ClarItem>,
+  /// Command-line definition.
+  definition: ClarDefinition,
   /// Color mode.
   cm: ColorMode,
 }
@@ -29,7 +31,7 @@ impl Clar {
     Self {
       app: app.as_ref().to_string(),
       description: None,
-      items: vec![],
+      definition: ClarDefinition::default(),
       cm: ColorMode::default(),
     }
   }
@@ -40,98 +42,84 @@ impl Clar {
     self
   }
 
-  /// Returns resolver that recognizes an **option terminator**.
-  pub fn terminator(mut self, t: ClarTerminator) -> Self {
-    self.items.clear();
-    self.items.push(ClarItem::Terminator(t));
+  /// Returns a resolver that recognizes an option terminator.
+  pub fn terminator(mut self, option_terminator: ClarTerminator) -> Self {
+    self.definition.terminator(option_terminator);
     self
   }
 
-  /// Returns resolver that recognizes **options**.
-  pub fn options<O>(mut self, o: O) -> Self
+  /// Returns a resolver that recognizes options.
+  pub fn options<O>(mut self, options: O) -> Self
   where
     O: IntoIterator<Item = ClarOption>,
   {
-    self.items.clear();
-    self.items.push(ClarItem::Options(o.into_iter().collect()));
+    self.definition.options(options);
     self
   }
 
-  /// Returns resolver that recognizes **options** followed by **option terminator**.
-  pub fn options_t<O>(&mut self, o: O, t: ClarTerminator)
+  /// Returns a resolver that recognizes options followed by option terminator.
+  pub fn options_terminator<O>(mut self, options: O, option_terminator: ClarTerminator) -> Self
   where
     O: IntoIterator<Item = ClarOption>,
   {
-    self.items.clear();
-    self.items.push(ClarItem::Options(o.into_iter().collect()));
-    self.items.push(ClarItem::Terminator(t));
-  }
-
-  /// Returns resolver that recognizes **arguments**.
-  pub fn arguments<A>(mut self, a: A) -> Self
-  where
-    A: IntoIterator<Item = ClarArgument>,
-  {
-    self.items.clear();
-    self.items.push(ClarItem::Arguments(a.into_iter().collect()));
+    self.definition.options_terminator(options, option_terminator);
     self
   }
 
-  /// Returns resolver that recognizes **arguments** followed by **option terminator**.
-  pub fn arguments_t<A>(mut self, a: A, t: ClarTerminator) -> Self
+  /// Returns a resolver that recognizes arguments.
+  pub fn arguments<A>(mut self, arguments: A) -> Self
   where
     A: IntoIterator<Item = ClarArgument>,
   {
-    self.items.clear();
-    self.items.push(ClarItem::Arguments(a.into_iter().collect()));
-    self.items.push(ClarItem::Terminator(t));
+    self.definition.arguments(arguments);
     self
   }
 
-  /// Returns resolver that recognizes **options** followed by **arguments**.
-  pub fn options_arguments<O, A>(mut self, o: O, a: A) -> Self
+  /// Returns a resolver that recognizes arguments followed by option terminator.
+  pub fn arguments_terminator<A>(mut self, arguments: A, option_terminator: ClarTerminator) -> Self
+  where
+    A: IntoIterator<Item = ClarArgument>,
+  {
+    self.definition.arguments_terminator(arguments, option_terminator);
+    self
+  }
+
+  /// Returns a resolver that recognizes options followed by arguments.
+  pub fn options_arguments<O, A>(mut self, options: O, arguments: A) -> Self
   where
     O: IntoIterator<Item = ClarOption>,
     A: IntoIterator<Item = ClarArgument>,
   {
-    self.items.clear();
-    self.items.push(ClarItem::Options(o.into_iter().collect()));
-    self.items.push(ClarItem::Arguments(a.into_iter().collect()));
+    self.definition.options_arguments(options, arguments);
     self
   }
 
-  /// Returns resolver that recognizes **options** followed by **arguments** and **option terminator**.
-  pub fn options_arguments_t<O, A>(mut self, o: O, a: A, t: ClarTerminator) -> Self
+  /// Returns a resolver that recognizes options followed by arguments and option terminator.
+  pub fn options_arguments_terminator<O, A>(mut self, options: O, arguments: A, option_terminator: ClarTerminator) -> Self
   where
     O: IntoIterator<Item = ClarOption>,
     A: IntoIterator<Item = ClarArgument>,
   {
-    self.items.clear();
-    self.items.push(ClarItem::Options(o.into_iter().collect()));
-    self.items.push(ClarItem::Arguments(a.into_iter().collect()));
-    self.items.push(ClarItem::Terminator(t));
+    self.definition.options_arguments_terminator(options, arguments, option_terminator);
     self
   }
 
-  /// Returns resolver that recognizes **subcommands**.
-  pub fn subcommands<S>(mut self, s: S) -> Self
+  /// Returns a resolver that recognizes commands.
+  pub fn commands<C>(mut self, commands: C) -> Self
   where
-    S: IntoIterator<Item = ClarCommand>,
+    C: IntoIterator<Item = ClarCommand>,
   {
-    self.items.clear();
-    self.items.push(ClarItem::Commands(s.into_iter().collect()));
+    self.definition.commands(commands);
     self
   }
 
-  /// Returns resolver that recognizes **options** followed by **subcommands**.
-  pub fn options_subcommands<O, S>(mut self, options: O, subcommands: S) -> Self
+  /// Returns a resolver that recognizes options followed by commands.
+  pub fn options_commands<O, C>(mut self, options: O, commands: C) -> Self
   where
     O: IntoIterator<Item = ClarOption>,
-    S: IntoIterator<Item = ClarCommand>,
+    C: IntoIterator<Item = ClarCommand>,
   {
-    self.items.clear();
-    self.items.push(ClarItem::Options(options.into_iter().collect()));
-    self.items.push(ClarItem::Commands(subcommands.into_iter().collect()));
+    self.definition.options_commands(options, commands);
     self
   }
 
@@ -141,36 +129,46 @@ impl Clar {
     I: IntoIterator<Item = S>,
     S: AsRef<str>,
   {
-    // Update paths to command line elements in definitions tree.
-    update_paths(&mut self.items, &mut vec![]);
-    // Parse command line arguments into tokens.
-    let mut tokens: VecDeque<Token> = Lexer::default().parse(input).map_err(|reason| {
-      let text = get_error(&reason, &self.app, &self.items, self.cm);
+    // Validate the command-line definition.
+    self.definition.validate().map_err(|reason| {
+      let text = get_cfg_error_text(&reason, self.cm);
       ClarDiagnostic::new(reason, text)
     })?;
-    // Prepare evaluator for command line arguments basing definitions.
-    let evaluator = ev_consumed(self.build_evaluator(&self.items));
-    // Resolve command line arguments using evaluator.
+    // Parse command-line arguments into tokens.
+    let mut tokens: VecDeque<Token> = Lexer::default().parse(input).map_err(|reason| {
+      let text = get_error_text(&reason, &self.app, &self.definition, &[], self.cm);
+      ClarDiagnostic::new(reason, text)
+    })?;
+    // Prepare evaluator for command-line arguments based on definitions.
+    let evaluator = ev_consumed(self.build_evaluator(&self.definition));
+    // Resolve command-line arguments using evaluator.
     let mut values = vec![];
-    match evaluator(&mut tokens, &mut values) {
-      Ok(_) => Ok(ClarMatches::new(
-        self.app,
-        self.description,
-        values,
-        self.items,
-        self.cm,
-      )),
+    let result = evaluator(&mut tokens, &mut values);
+    // Find the resolved command names to adjust usage message.
+    let names = if let Some(Value::Command(path)) = values.iter().find(|value| matches!(value, Value::Command(_))) {
+      path.parent_names()
+    } else {
+      &[]
+    };
+    match result {
+      Ok(_) => {
+        self.validate_values(&values).map_err(|reason| {
+          let text = get_error_text(&reason, &self.app, &self.definition, names, self.cm);
+          ClarDiagnostic::new(reason, text)
+        })?;
+        Ok(ClarMatches::new(self.app, self.description, values, self.definition, self.cm))
+      }
       Err(reason) => {
-        let text = get_error(&reason, &self.app, &self.items, self.cm);
+        let text = get_error_text(&reason, &self.app, &self.definition, names, self.cm);
         Err(ClarDiagnostic::new(reason, text))
       }
     }
   }
 
   /// Returns the evaluator for the command line arguments.
-  fn build_evaluator(&self, items: &[ClarItem]) -> Evaluator {
+  fn build_evaluator(&self, definition: &ClarDefinition) -> Evaluator {
     let mut evaluators = vec![];
-    for item in items {
+    for item in definition.items() {
       match item {
         ClarItem::Options(options) => {
           let mut options_evaluators = vec![];
@@ -195,15 +193,12 @@ impl Clar {
           evaluators.push(ev_stop_on_one(standalone_options_evaluators));
           evaluators.push(ev_zero_or_more_options(options_evaluators));
         }
-        ClarItem::Commands(subcommands) => {
-          let mut subcommand_evaluators = vec![];
-          for subcommand in subcommands {
-            subcommand_evaluators.push(ev_and_then(
-              ev_subcommand(subcommand.into()),
-              self.build_evaluator(subcommand.get_items()),
-            ));
+        ClarItem::Commands(commands) => {
+          let mut command_evaluators = vec![];
+          for command in commands {
+            command_evaluators.push(ev_command_and_then(command.into(), self.build_evaluator(command.get_definition())));
           }
-          evaluators.push(ev_one(subcommand_evaluators));
+          evaluators.push(ev_one(command_evaluators));
         }
         ClarItem::Arguments(arguments) => {
           for argument in arguments {
@@ -214,5 +209,34 @@ impl Clar {
       }
     }
     ev_sequence(evaluators)
+  }
+
+  fn validate_values(&self, values: &[Value]) -> ClarResult<()> {
+    self.expect_max_option_occurrences(values)?;
+    Ok(())
+  }
+
+  fn expect_max_option_occurrences(&self, values: &[Value]) -> ClarResult<()> {
+    let mut totals: HashMap<ClarPath, usize> = HashMap::new();
+    let mut paths = vec![];
+    for value in values {
+      match value {
+        Value::ShortOption(path, _) | Value::LongOption(path, _) => {
+          totals.entry(path.clone()).and_modify(|count| *count += 1).or_insert(1);
+          paths.push(path.clone());
+        }
+        _ => {}
+      }
+    }
+    let options = self.definition.get_options();
+    for path in &paths {
+      let occurrences = *totals.get(path).unwrap(); // This is safe, path MUST exist in totals.
+      let option = options.get(path).unwrap(); // This is safe, option MUST exist for path.
+      let max = option.get_max_occurrences();
+      if occurrences > max {
+        return Err(err_exceeded_max_option_occurrences(option.get_synopsis(), max, occurrences));
+      }
+    }
+    Ok(())
   }
 }

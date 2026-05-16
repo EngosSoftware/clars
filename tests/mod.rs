@@ -1,21 +1,20 @@
 mod arguments;
+mod command;
+mod commands;
 mod empty;
+mod helpers;
 mod lexer;
 mod matches;
 mod messages;
 mod options;
-mod subcommands;
 mod terminator;
-mod test_lexer;
-mod test_model;
-mod test_parser;
 
 const APP: &str = "clars";
 const EMPTY_VALUES: Vec<Option<String>> = vec![];
 const EMPTY_INPUT: Vec<&str> = vec![];
 const VALUE_NONE: Option<String> = None;
 
-use antex::Text;
+use antex::{ColorMode, Text};
 use clars::*;
 
 macro_rules! some {
@@ -25,6 +24,10 @@ macro_rules! some {
 }
 
 use some;
+
+fn clar() -> Clar {
+  Clar::new(APP)
+}
 
 fn argument(name: &str, default_value: Option<String>, required: bool) -> ClarArgument {
   let mut argument = ClarArgument::new(name);
@@ -37,8 +40,13 @@ fn argument(name: &str, default_value: Option<String>, required: bool) -> ClarAr
   argument
 }
 
-fn eq_msg(expected: impl AsRef<str>, text: Text) {
-  assert_eq!(indoc(expected.as_ref()), text.chars().collect::<String>());
+fn eq_text(expected: impl AsRef<str>, text: Text) {
+  assert_eq!(indoc(expected.as_ref()), text.characters());
+}
+
+fn eq_diag(expected_msg: impl AsRef<str>, expected_text: impl AsRef<str>, diagnostic: ClarDiagnostic) {
+  assert_eq!(expected_msg.as_ref(), diagnostic.to_owned().to_string());
+  assert_eq!(indoc(expected_text.as_ref()), diagnostic.text().characters());
 }
 
 fn indoc(input: &str) -> String {

@@ -1,9 +1,9 @@
 use super::*;
 
 fn option(takes_value: bool, default_value: Option<String>, default_missing_value: Option<String>) -> ClarOption {
-  let mut option = ClarOption::new("help", 'h', "help");
+  let mut option = ClarOption::new("color", 'c', "color").max_occurrences(2);
   if takes_value {
-    option = option.takes_value("VALUE")
+    option = option.takes_value("WHEN")
   }
   if let Some(value) = default_value {
     option = option.default_value(value);
@@ -25,11 +25,7 @@ where
     input.default_missing_value.clone(),
   )]);
   let matches = clar.resolve(command_line).map_err(|e| e.to_owned())?;
-  Ok((
-    matches.is_present("help"),
-    matches.get_count("help"),
-    matches.get_values("help"),
-  ))
+  Ok((matches.is_present("color"), matches.get_count("color"), matches.get_values("color")))
 }
 
 #[derive(Debug)]
@@ -46,16 +42,16 @@ fn command_line(input: &Input) -> Vec<&str> {
     0 => vec![],
     1 => {
       if input.value_provided {
-        vec!["-h=X"]
+        vec!["-c=never"]
       } else {
-        vec!["-h"]
+        vec!["-c"]
       }
     }
     2 => {
       if input.value_provided {
-        vec!["-h=X", "--help", "Y"]
+        vec!["-c=never", "--color", "Y"]
       } else {
-        vec!["-h", "--help"]
+        vec!["-c", "--color"]
       }
     }
     _ => panic!("invalid number of appearances"),
@@ -63,13 +59,9 @@ fn command_line(input: &Input) -> Vec<&str> {
 }
 
 fn expected_error_message(input: &Input) -> Option<&str> {
-  match (
-    input.takes_value,
-    input.value_provided,
-    input.default_missing_value.is_some(),
-  ) {
-    (true, false, false) if input.appearances > 0 => Some("a value is required for '-h <VALUE>' but none was supplied"),
-    (false, true, _) if input.appearances > 0 => Some("option '-h' does not accept a value"),
+  match (input.takes_value, input.value_provided, input.default_missing_value.is_some()) {
+    (true, false, false) if input.appearances > 0 => Some("a value is required for '-c <WHEN>' but none was supplied"),
+    (false, true, _) if input.appearances > 0 => Some("option '-c' does not accept a value"),
     _ => None,
   }
 }
@@ -93,10 +85,10 @@ fn expected_values(input: &Input) -> Vec<Option<String>> {
     (0, _, true, true, _) => vec![input.default_value.clone()],
     (0, ..) => EMPTY_VALUES,
     (1, false, true, _, true) => vec![input.default_missing_value.clone()],
-    (1, true, true, _, _) => vec![some!("X")],
+    (1, true, true, _, _) => vec![some!("never")],
     (1, ..) => vec![VALUE_NONE],
     (2, false, true, _, true) => vec![some!("B"), some!("B")],
-    (2, true, true, _, _) => vec![some!("X"), some!("Y")],
+    (2, true, true, _, _) => vec![some!("never"), some!("Y")],
     (2, ..) => vec![VALUE_NONE, VALUE_NONE],
     (other, ..) => panic!("invalid number of appearances: {}", other),
   }
@@ -111,7 +103,7 @@ fn all_cases_should_work() {
   let mut inputs = vec![];
   for appearances in 0..=2 {
     for value_provided in boolean_values {
-      for takes_value in boolean_values {
+      for takes_value in [true, true] {
         for default_value in &default_values {
           for default_missing_value in &default_missing_values {
             inputs.push(Input {
@@ -129,10 +121,7 @@ fn all_cases_should_work() {
   // Execute tests.
   for input in &inputs {
     if let Some(expected_error_message) = expected_error_message(input) {
-      assert_eq!(
-        expected_error_message,
-        eq(command_line(input), input).unwrap_err().to_string()
-      );
+      assert_eq!(expected_error_message, eq(command_line(input), input).unwrap_err().to_string());
     } else {
       let (is_present, count, values) = eq(command_line(input), input).unwrap();
       assert_eq!(expected_is_present(input), is_present);

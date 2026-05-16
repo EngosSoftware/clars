@@ -28,7 +28,14 @@ tasks:
     desc: Generates code coverage report in text format
     cmds:
       - cmd: cargo +stable llvm-cov clean
-      - cmd: cargo +stable llvm-cov
+      - cmd: cargo +stable llvm-cov --no-cfg-coverage
+
+  cov-examples:
+    desc: Generates code coverage report in text format from examples
+    cmds:
+      - cmd: cargo +stable llvm-cov clean
+      - cmd: cargo +stable llvm-cov run --example sedi --no-report --no-cfg-coverage
+      - cmd: cargo +stable llvm-cov report
 
   cov-examples:
     desc: Generates code coverage report in text format from examples
@@ -41,13 +48,13 @@ tasks:
     desc: Generates code coverage report in HTML format
     cmds:
       - cmd: cargo +stable llvm-cov clean
-      - cmd: cargo +stable llvm-cov --html
+      - cmd: cargo +stable llvm-cov --no-cfg-coverage --html
 
   cov-html-open:
     desc: Generates code coverage report in HTML format and opens in browser
     cmds:
       - cmd: cargo +stable llvm-cov clean
-      - cmd: cargo +stable llvm-cov --html --open
+      - cmd: cargo +stable llvm-cov --no-cfg-coverage --html --open
 
   cov-badge:
     desc: Generates the detailed code coverage badge

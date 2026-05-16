@@ -6,10 +6,7 @@ const NAME1: &str = "file1";
 const NAME2: &str = "file2";
 
 fn clar(config1: (bool, Option<String>), config2: (bool, Option<String>)) -> Clar {
-  Clar::new(APP).arguments(vec![
-    argument(NAME1, config1.1, config1.0),
-    argument(NAME2, config2.1, config2.0),
-  ])
+  Clar::new(APP).arguments(vec![argument(NAME1, config1.1, config1.0), argument(NAME2, config2.1, config2.0)])
 }
 
 fn pass<I, S>(
@@ -41,13 +38,7 @@ where
 
 #[test]
 fn _0001() {
-  pass(
-    (true, None),
-    (true, None),
-    ["X", "Y"],
-    (true, 1, vec![some!("X")]),
-    (true, 1, vec![some!("Y")]),
-  );
+  pass((true, None), (true, None), ["X", "Y"], (true, 1, vec![some!("X")]), (true, 1, vec![some!("Y")]));
 }
 
 #[test]

@@ -1,11 +1,11 @@
 [package]
 name = "clars"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Dariusz Depta <depta@engos.de>"]
-description = "Command line arguments resolution system"
+description = "Command line arguments resolver"
 documentation = "https://docs.rs/clars"
 repository = "https://github.com/EngosSoftware/clars.git"
-keywords = ["command", "line", "arguments", "resolution", "system"]
+keywords = ["command", "line", "arguments", "resolver"]
 categories = ["command-line-utilities"]
 license = "MIT OR Apache-2.0"
 edition = "2024"
@@ -14,4 +14,4 @@ exclude = [
 ]
 
 [dependencies]
-antex = "0.2.2"
+antex = "0.2.3"

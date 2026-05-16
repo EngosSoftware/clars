@@ -1,5 +1,5 @@
 use antex::{ColorMode, Text};
-use clars::{Clar, ClarArgument, ClarOption, get_app_and_args, get_first_value, get_more_info_hint};
+use clars::{Clar, ClarArgument, ClarOption, get_app_and_args, get_more_info_hint};
 use std::process::ExitCode;
 
 enum CliAction {
@@ -12,13 +12,13 @@ enum CliAction {
 fn get_cli(app: String) -> Clar {
   Clar::new(app).description("Inplace stream editor").options_arguments(
     [
-      ClarOption::new_short("version", 'V')
-        .long("version")
+      ClarOption::short("version", 'V')
+        .long_label("version")
         .standalone()
         .help("Print version")
         .help_long("Print\nversion"),
-      ClarOption::new_short("help", 'h')
-        .long("help")
+      ClarOption::short("help", 'h')
+        .long_label("help")
         .standalone()
         .help("Print help")
         .help_long("Print\nhelp"),
@@ -53,9 +53,9 @@ fn get_action(app: String, args: Vec<String>) -> CliAction {
         return CliAction::ShowVersion;
       }
       if let (Some(pattern), Some(replacement), Some(file)) = (
-        get_first_value(&matches, "pattern"),
-        get_first_value(&matches, "replacement"),
-        get_first_value(&matches, "file"),
+        matches.get_first_value("pattern"),
+        matches.get_first_value("replacement"),
+        matches.get_first_value("file"),
       ) {
         return CliAction::Replace(pattern, replacement, file);
       }

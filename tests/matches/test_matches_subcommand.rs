@@ -6,7 +6,7 @@ fn subcommand(name: &str) -> ClarCommand {
 
 #[test]
 fn _0001() {
-  let clar = Clar::new(APP).subcommands(vec![subcommand("print")]);
+  let clar = Clar::new(APP).commands(vec![subcommand("print")]);
 
   // Subcommand appears once in command line.
   let matches = clar.clone().resolve(["print"]).unwrap();
@@ -15,8 +15,5 @@ fn _0001() {
   assert_eq!(EMPTY_VALUES, matches.get_values("print"));
 
   // Subcommand does not appear in command line.
-  assert_eq!(
-    "unexpected argument 'send' found",
-    clar.resolve(["send"]).unwrap_err().to_string()
-  );
+  assert_eq!("unexpected argument 'send' found", clar.resolve(["send"]).unwrap_err().to_string());
 }

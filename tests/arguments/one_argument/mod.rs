@@ -66,12 +66,12 @@ fn _0006() {
 
 #[test]
 fn _0007() {
-  pass((true, some!("A")), EMPTY_INPUT, (false, 0, vec![some!("A")]));
+  fail((true, some!("A")), EMPTY_INPUT, "default value for required argument 'file' is not allowed");
 }
 
 #[test]
 fn _0008() {
-  pass((true, some!("A")), ["X"], (true, 1, vec![some!("X")]));
+  fail((true, some!("A")), ["X"], "default value for required argument 'file' is not allowed");
 }
 
 #[test]
@@ -80,7 +80,7 @@ fn _0009() {
   fail((false, None), ["X", "Y"], expected);
   fail((false, some!("A")), ["X", "Y"], expected);
   fail((true, None), ["X", "Y"], expected);
-  fail((true, some!("A")), ["X", "Y"], expected);
+  fail((true, some!("A")), ["X", "Y"], "default value for required argument 'file' is not allowed");
 }
 
 #[test]
@@ -89,7 +89,7 @@ fn _0010() {
   fail((false, None), ["-h"], expected);
   fail((false, some!("A")), ["-h"], expected);
   fail((true, None), ["-h"], expected);
-  fail((true, some!("A")), ["-h"], expected);
+  fail((true, some!("A")), ["-h"], "default value for required argument 'file' is not allowed");
 }
 
 #[test]
@@ -98,7 +98,7 @@ fn _0011() {
   fail((false, None), ["--help"], expected);
   fail((false, some!("A")), ["--help"], expected);
   fail((true, None), ["--help"], expected);
-  fail((true, some!("A")), ["--help"], expected);
+  fail((true, some!("A")), ["--help"], "default value for required argument 'file' is not allowed");
 }
 
 #[test]
@@ -107,7 +107,7 @@ fn _0012() {
   fail((false, None), ["--"], expected);
   fail((false, some!("A")), ["--"], expected);
   fail((true, None), ["--"], expected);
-  fail((true, some!("A")), ["--"], expected);
+  fail((true, some!("A")), ["--"], "default value for required argument 'file' is not allowed");
 }
 
 #[test]
@@ -116,7 +116,7 @@ fn _0013() {
   fail((false, None), ["--", "a"], expected);
   fail((false, some!("A")), ["--", "a"], expected);
   fail((true, None), ["--", "a"], expected);
-  fail((true, some!("A")), ["--", "a"], expected);
+  fail((true, some!("A")), ["--", "a"], "default value for required argument 'file' is not allowed");
 }
 
 #[test]
@@ -129,12 +129,7 @@ Arguments:
   [FILE]  File short
 "#
     .trim_start(),
-    clar((false, None))
-      .resolve(EMPTY_INPUT)
-      .unwrap()
-      .get_help()
-      .chars()
-      .collect::<String>()
+    clar((false, None)).resolve(EMPTY_INPUT).unwrap().get_help().chars().collect::<String>()
   )
 }
 
@@ -145,5 +140,5 @@ fn hyphen_is_a_valid_argument() {
   pass((false, None), ["-"], (true, 1, vec![some!("-")]));
   pass((false, some!("A")), ["-"], (true, 1, vec![some!("-")]));
   pass((true, None), ["-"], (true, 1, vec![some!("-")]));
-  pass((true, some!("A")), ["-"], (true, 1, vec![some!("-")]));
+  fail((true, some!("A")), ["-"], "default value for required argument 'file' is not allowed");
 }

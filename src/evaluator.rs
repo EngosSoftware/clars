@@ -1,5 +1,6 @@
 use crate::errors::*;
 use crate::lexer::Token;
+use crate::path::ClarPath;
 use crate::{ClarArgument, ClarCommand, ClarOption, ClarTerminator};
 use std::collections::VecDeque;
 
@@ -7,27 +8,27 @@ use std::collections::VecDeque;
 pub enum Value {
   /// Short option with optional value.
   ShortOption(
-    /// Path in definition tree.
-    String,
+    /// Path in the definition tree.
+    ClarPath,
     /// Optional value assigned to short option.
     Option<String>,
   ),
   /// Long option with optional value.
   LongOption(
-    /// Path in definition tree.
-    String,
+    /// Path in the definition tree.
+    ClarPath,
     /// Optional value assigned to long option.
     Option<String>,
   ),
-  /// Subcommand.
-  Subcommand(
-    /// Path in definition tree.
-    String,
+  /// Command.
+  Command(
+    /// Path in the definition tree.
+    ClarPath,
   ),
   /// Argument.
   Argument(
-    /// Path in definition tree.
-    String,
+    /// Path in the definition tree.
+    ClarPath,
     /// Argument value.
     String,
     /// Indicates if the argument was present in the input,
@@ -35,40 +36,40 @@ pub enum Value {
     bool,
   ),
   OptionTerminator(
-    /// Path in definition tree.
-    String,
+    /// Path in the definition tree.
+    ClarPath,
     /// Arguments after option terminator.
     Vec<String>,
   ),
 }
 
 impl Value {
-  pub fn short(path: String, value: Option<String>) -> Self {
+  pub fn short(path: ClarPath, value: Option<String>) -> Self {
     Value::ShortOption(path, value)
   }
 
-  pub fn long(path: String, value: Option<String>) -> Self {
+  pub fn long(path: ClarPath, value: Option<String>) -> Self {
     Value::LongOption(path, value)
   }
 
-  pub fn subcommand(path: String) -> Self {
-    Value::Subcommand(path)
+  pub fn command(path: ClarPath) -> Self {
+    Value::Command(path)
   }
 
-  pub fn argument(path: String, value: String, present: bool) -> Self {
+  pub fn argument(path: ClarPath, value: String, present: bool) -> Self {
     Value::Argument(path, value, present)
   }
 
-  pub fn option_terminator(path: String, values: Vec<String>) -> Self {
+  pub fn terminator(path: ClarPath, values: Vec<String>) -> Self {
     Value::OptionTerminator(path, values)
   }
 
   /// Returns the path in definition tree.
-  pub fn path(&self) -> &str {
+  pub fn path(&self) -> &ClarPath {
     match self {
       Value::ShortOption(path, _) => path,
       Value::LongOption(path, _) => path,
-      Value::Subcommand(path) => path,
+      Value::Command(path) => path,
       Value::Argument(path, _, _) => path,
       Value::OptionTerminator(path, _) => path,
     }
@@ -80,7 +81,7 @@ impl Value {
       Value::ShortOption(_, value) => vec![value.clone()],
       Value::LongOption(_, value) => vec![value.clone()],
       Value::Argument(_, value, _) => vec![Some(value.clone())],
-      Value::Subcommand(_) => vec![],
+      Value::Command(_) => vec![],
       Value::OptionTerminator(_, value) => value.iter().map(|s| Some(s.clone())).collect(),
     }
   }
@@ -92,7 +93,7 @@ impl Value {
       Value::ShortOption(_, _) => true,
       Value::LongOption(_, _) => true,
       Value::Argument(_, _, present) => *present,
-      Value::Subcommand(_) => true,
+      Value::Command(_) => true,
       Value::OptionTerminator(_, _) => true,
     }
   }
@@ -100,67 +101,69 @@ impl Value {
 
 #[derive(Debug, Default, Clone)]
 pub struct EvalOption {
-  path: String,
+  path: ClarPath,
   standalone: bool,
-  default_missing_value: Option<String>,
   takes_value: Option<String>,
+  default_missing_value: Option<String>,
+  possible_values: Vec<String>,
+  synopsis: String,
 }
 
 impl From<&ClarOption> for EvalOption {
   fn from(value: &ClarOption) -> Self {
     Self {
-      path: value.get_path().to_string(),
+      path: value.get_path().clone(),
       standalone: value.is_standalone(),
-      default_missing_value: value.get_default_missing_value().clone(),
       takes_value: value.get_takes_value().clone(),
+      default_missing_value: value.get_default_missing_value().clone(),
+      possible_values: value.get_possible_values().clone(),
+      synopsis: value.get_synopsis().clone(),
     }
   }
 }
 
 #[derive(Debug, Default, Clone)]
-pub struct EvalSubcommand {
+pub struct EvalCommand {
   name: String,
-  path: String,
+  path: ClarPath,
 }
 
-impl From<&ClarCommand> for EvalSubcommand {
+impl From<&ClarCommand> for EvalCommand {
   fn from(value: &ClarCommand) -> Self {
     Self {
       name: value.get_name().to_string(),
-      path: value.get_path().to_string(),
+      path: value.get_path().clone(),
     }
   }
 }
 
 #[derive(Debug, Default, Clone)]
 pub struct EvalArgument {
-  path: String,
+  path: ClarPath,
   caption: String,
   required: bool,
-  default_value: Option<String>,
 }
 
 impl From<&ClarArgument> for EvalArgument {
   fn from(value: &ClarArgument) -> Self {
     Self {
-      path: value.get_path().to_string(),
+      path: value.get_path().clone(),
       caption: value.get_caption().to_string(),
       required: value.is_required(),
-      default_value: value.get_default_value().clone(),
     }
   }
 }
 
 #[derive(Debug, Default, Clone)]
 pub struct EvalOptionTerminator {
-  path: String,
+  path: ClarPath,
   required: bool,
 }
 
 impl From<&ClarTerminator> for EvalOptionTerminator {
   fn from(value: &ClarTerminator) -> Self {
     Self {
-      path: value.get_path().to_string(),
+      path: value.get_path().clone(),
       required: value.is_required(),
     }
   }
@@ -189,7 +192,7 @@ pub fn ev_short_option(label: char, option: EvalOption) -> Evaluator {
           return Err(err_short_option_must_be_used_alone(short_label));
         }
         if option.takes_value.is_none() && value.is_some() {
-          return Err(err_short_option_does_not_accept_a_value(short_label));
+          return Err(err_short_option_does_not_accept_value(short_label));
         }
         if let Some(caption) = &option.takes_value
           && value.is_none()
@@ -200,12 +203,18 @@ pub fn ev_short_option(label: char, option: EvalOption) -> Evaluator {
           } else if option.default_missing_value.is_some() {
             value = option.default_missing_value.clone();
           } else {
-            return Err(err_short_option_requires_value(
-              option.path.clone(),
-              short_label,
-              caption.clone(),
-            ));
+            return Err(err_short_option_requires_value(short_label, caption.clone()));
           }
+        }
+        if !option.possible_values.is_empty()
+          && let Some(value) = &value
+          && !option.possible_values.contains(value)
+        {
+          return Err(err_invalid_value_for_option(
+            option.synopsis.clone(),
+            value.clone(),
+            option.possible_values.clone(),
+          ));
         }
         values.push(Value::short(option.path.clone(), value));
         Ok(Status::Match)
@@ -231,7 +240,7 @@ pub fn ev_long_option(label: impl AsRef<str>, option: EvalOption) -> Evaluator {
           return Err(err_long_option_must_be_used_alone(long_label));
         }
         if option.takes_value.is_none() && value.is_some() {
-          return Err(err_long_option_does_not_accept_a_value(long_label));
+          return Err(err_long_option_does_not_accept_value(long_label));
         }
         if let Some(caption) = &option.takes_value
           && value.is_none()
@@ -242,12 +251,18 @@ pub fn ev_long_option(label: impl AsRef<str>, option: EvalOption) -> Evaluator {
           } else if option.default_missing_value.is_some() {
             value = option.default_missing_value.clone();
           } else {
-            return Err(err_long_option_requires_value(
-              option.path.clone(),
-              long_label,
-              caption.clone(),
-            ));
+            return Err(err_long_option_requires_value(long_label, caption.clone()));
           }
+        }
+        if !option.possible_values.is_empty()
+          && let Some(value) = &value
+          && !option.possible_values.contains(value)
+        {
+          return Err(err_invalid_value_for_option(
+            option.synopsis.clone(),
+            value.clone(),
+            option.possible_values.clone(),
+          ));
         }
         values.push(Value::long(option.path.clone(), value));
         Ok(Status::Match)
@@ -258,27 +273,28 @@ pub fn ev_long_option(label: impl AsRef<str>, option: EvalOption) -> Evaluator {
   })
 }
 
-/// Returns an evaluator for a subcommand.
-pub fn ev_subcommand(subcommand: EvalSubcommand) -> Evaluator {
+/// Returns an evaluator for a command.
+pub fn ev_command(command: EvalCommand) -> Evaluator {
   Box::new(move |tokens, values| -> ClarResult<Status> {
     if tokens.is_empty() {
       Ok(Status::NoMatch)
     } else {
       if let Token::Argument(value) = &tokens[0]
-        && subcommand.name.eq(value)
+        && command.name.eq(value)
       {
         tokens.pop_front();
-        // Remove all parent subcommands from already resolved values.
-        if let Some((parent, _)) = subcommand.path.rsplit_once("/") {
+        // Remove all parent commands from already resolved values.
+        // Only the 'leaf' command should be left in resolved values
+        if let Some(parent_path) = command.path.parent() {
           values.retain(|value| {
-            if let Value::Subcommand(path) = value {
-              return parent != path;
+            if let Value::Command(path) = value {
+              return parent_path.ne(path);
             }
             true
           });
         }
-        // A new subcommand is resolved.
-        values.push(Value::subcommand(subcommand.path.clone()));
+        // A new command is resolved.
+        values.push(Value::command(command.path.clone()));
         Ok(Status::Match)
       } else {
         Ok(Status::NoMatch)
@@ -306,12 +322,7 @@ pub fn ev_argument(argument: EvalArgument) -> Evaluator {
       },
       None => {
         if argument.required {
-          if let Some(value) = &argument.default_value {
-            values.push(Value::argument(argument.path.clone(), value.clone(), false));
-            Ok(Status::Match)
-          } else {
-            Err(err_missing_required_argument(argument.caption.clone()))
-          }
+          Err(err_missing_required_argument(argument.caption.clone()))
         } else {
           Ok(Status::NoMatch)
         }
@@ -321,17 +332,16 @@ pub fn ev_argument(argument: EvalArgument) -> Evaluator {
 }
 
 /// Returns an evaluator for an option terminator.
-pub fn ev_option_terminator(option_terminator: EvalOptionTerminator) -> Evaluator {
-  let EvalOptionTerminator { path: name, required } = option_terminator;
+pub fn ev_option_terminator(terminator: EvalOptionTerminator) -> Evaluator {
   Box::new(move |tokens, values| -> ClarResult<Status> {
     let err_on_required = |e| {
-      if required { Err(e) } else { Ok(Status::NoMatch) }
+      if terminator.required { Err(e) } else { Ok(Status::NoMatch) }
     };
     match tokens.front().cloned() {
       Some(token) => match token {
         Token::OptionTerminator(arguments) => {
           tokens.pop_front();
-          values.push(Value::option_terminator(name.clone(), arguments));
+          values.push(Value::terminator(terminator.path.clone(), arguments));
           Ok(Status::Match)
         }
         Token::ShortOption(label, _) => err_on_required(err_unexpected_short_option(label)),
@@ -339,8 +349,8 @@ pub fn ev_option_terminator(option_terminator: EvalOptionTerminator) -> Evaluato
         Token::Argument(value) => err_on_required(err_unexpected_argument(value)),
       },
       None => {
-        if required {
-          Err(err_missing_required_option_terminator())
+        if terminator.required {
+          Err(err_missing_required_terminator())
         } else {
           Ok(Status::NoMatch)
         }
@@ -417,9 +427,10 @@ pub fn ev_sequence(evaluators: Vec<Evaluator>) -> Evaluator {
   })
 }
 
-pub fn ev_and_then(evaluator: Evaluator, evaluator_then: Evaluator) -> Evaluator {
+pub fn ev_command_and_then(command: EvalCommand, evaluator_then: Evaluator) -> Evaluator {
+  let evaluator = ev_command(command);
   Box::new(move |tokens, values| -> ClarResult<Status> {
-    let mut status = evaluator(tokens, values)?;
+    let mut status = evaluator(tokens, values).unwrap(); // Unwrap is safe, ev_command does not return errors.
     if status == Status::Match {
       status = status.max(evaluator_then(tokens, values)?);
     }

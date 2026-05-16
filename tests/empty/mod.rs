@@ -4,43 +4,46 @@ use super::*;
 
 #[test]
 fn _0001() {
-  // No values resolved for empty CLI definition and empty input.
-  assert_eq!(
-    Vec::<Value>::new(),
-    Clar::new(APP).resolve(EMPTY_INPUT).unwrap().raw_values()
+  // Given: Resolver without any definition.
+  //  When: Retrieved the help message.
+  //  Then: The expected message should contain only usage.
+  eq_text(
+    r#"
+    Usage: clars
+  "#,
+    Clar::new(APP).resolve(EMPTY_INPUT).unwrap().get_help(),
   );
 }
 
 #[test]
 fn _0002() {
-  // Help text for empty CLI definition and empty input.
-  assert_eq!(
-    "Usage: clars\n",
+  // Given: Resolver without any definition but with application description.
+  //  When: Retrieved the help message.
+  //  Then: The expected message should contain description and usage.
+  eq_text(
+    r#"
+    Command line arguments resolver
+
+    Usage: clars
+  "#,
     Clar::new(APP)
+      .description("Command line arguments resolver")
       .resolve(EMPTY_INPUT)
       .unwrap()
-      .get_help()
-      .chars()
-      .collect::<String>()
+      .get_help(),
   );
 }
 
 #[test]
 fn _0003() {
   // No CLI definition but a short option given as an input.
-  assert_eq!(
-    "unexpected option '-h' found",
-    Clar::new(APP).resolve(["-h"]).unwrap_err().to_string()
-  );
+  assert_eq!("unexpected option '-h' found", Clar::new(APP).resolve(["-h"]).unwrap_err().to_string());
 }
 
 #[test]
 fn _0004() {
   // No CLI definition but a long option given as an input.
-  assert_eq!(
-    "unexpected option '--help' found",
-    Clar::new(APP).resolve(["--help"]).unwrap_err().to_string()
-  );
+  assert_eq!("unexpected option '--help' found", Clar::new(APP).resolve(["--help"]).unwrap_err().to_string());
 }
 
 #[test]

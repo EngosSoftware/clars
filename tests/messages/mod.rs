@@ -1,3 +1,9 @@
+mod argument;
+mod command;
+mod options;
+mod terminator;
+mod validations;
+
 use super::*;
 
 #[test]
@@ -7,8 +13,8 @@ fn _0001() {
     Usage: clars
   "#;
   let matches = Clar::new(APP).resolve(EMPTY_INPUT).unwrap();
-  eq_msg(expected, matches.get_help());
-  eq_msg(expected, matches.get_help_long());
+  eq_text(expected, matches.get_help());
+  eq_text(expected, matches.get_help_long());
 }
 
 #[test]
@@ -20,24 +26,33 @@ fn _0002() {
     Options:
       -c
   "#;
-  let matches = Clar::new(APP)
-    .options([ClarOption::new_short("color", 'c')])
-    .resolve(EMPTY_INPUT)
-    .unwrap();
-  eq_msg(expected, matches.get_help());
-  eq_msg(expected, matches.get_help_long());
+  let matches = Clar::new(APP).options([ClarOption::short("color", 'c')]).resolve(EMPTY_INPUT).unwrap();
+  eq_text(expected, matches.get_help());
+  eq_text(expected, matches.get_help_long());
 }
 
 #[test]
 fn _0003() {
+  // Single long option without help content.
+  let expected = r#"
+    Usage: clars [OPTIONS]
+
+    Options:
+            --color
+  "#;
+  let matches = Clar::new(APP).options([ClarOption::long("color", "color")]).resolve(EMPTY_INPUT).unwrap();
+  eq_text(expected, matches.get_help());
+  eq_text(expected, matches.get_help_long());
+}
+
+#[test]
+fn _0004() {
   // Single short option with only short help content.
   let matches = Clar::new(APP)
-    .options([ClarOption::new_short("color", 'c')
-      .help("Coloring")
-      .help_long("Beautiful coloring")])
+    .options([ClarOption::short("color", 'c').help("Coloring").help_long("Beautiful coloring")])
     .resolve(EMPTY_INPUT)
     .unwrap();
-  eq_msg(
+  eq_text(
     r#"
     Usage: clars [OPTIONS]
 
@@ -46,7 +61,7 @@ fn _0003() {
   "#,
     matches.get_help(),
   );
-  eq_msg(
+  eq_text(
     r#"
     Usage: clars [OPTIONS]
 
@@ -58,13 +73,13 @@ fn _0003() {
 }
 
 #[test]
-fn _0004() {
+fn _0005() {
   // Single short option with only long help content.
   let matches = Clar::new(APP)
-    .options([ClarOption::new_short("color", 'c').help_long("Coloring")])
+    .options([ClarOption::short("color", 'c').help_long("Coloring")])
     .resolve(EMPTY_INPUT)
     .unwrap();
-  eq_msg(
+  eq_text(
     r#"
     Usage: clars [OPTIONS]
 
@@ -73,7 +88,7 @@ fn _0004() {
   "#,
     matches.get_help(),
   );
-  eq_msg(
+  eq_text(
     r#"
     Usage: clars [OPTIONS]
 
@@ -85,100 +100,103 @@ fn _0004() {
 }
 
 #[test]
-fn _0005() {
+fn _0006() {
   // Single short option with default value.
   let expected = r#"
     Usage: clars [OPTIONS]
 
     Options:
-      -c  [default: always]
+      -c <WHEN>  [default: always]
   "#;
   let matches = Clar::new(APP)
-    .options([ClarOption::new_short("color", 'c').default_value("always")])
+    .options([ClarOption::short("color", 'c').takes_value("WHEN").default_value("always")])
     .resolve(EMPTY_INPUT)
     .unwrap();
-  eq_msg(expected, matches.get_help());
-  eq_msg(expected, matches.get_help_long());
+  eq_text(expected, matches.get_help());
+  eq_text(expected, matches.get_help_long());
 }
 
 #[test]
-fn _0006() {
+fn _0007() {
   // Single short option with default missing value.
   let expected = r#"
     Usage: clars [OPTIONS]
 
     Options:
-      -c  [implicit: never]
+      -c [<WHEN>]  [implicit: never]
   "#;
   let matches = Clar::new(APP)
-    .options([ClarOption::new_short("color", 'c').default_missing_value("never")])
+    .options([ClarOption::short("color", 'c').takes_value("WHEN").default_missing_value("never")])
     .resolve(EMPTY_INPUT)
     .unwrap();
-  eq_msg(expected, matches.get_help());
-  eq_msg(expected, matches.get_help_long());
+  eq_text(expected, matches.get_help());
+  eq_text(expected, matches.get_help_long());
 }
 
 #[test]
-fn _0007() {
+fn _0008() {
   // Single short option with possible values.
   let expected = r#"
     Usage: clars [OPTIONS]
 
     Options:
-      -c  (values: auto, always, never)
+      -c <WHEN>  [possible values: auto, always, never]
   "#;
   let matches = Clar::new(APP)
-    .options([ClarOption::new_short("color", 'c').possible_values(["auto", "always", "never"])])
+    .options([ClarOption::short("color", 'c').takes_value("WHEN").possible_values(["auto", "always", "never"])])
     .resolve(EMPTY_INPUT)
     .unwrap();
-  eq_msg(expected, matches.get_help());
-  eq_msg(expected, matches.get_help_long());
+  eq_text(expected, matches.get_help());
+  eq_text(expected, matches.get_help_long());
 }
 
 #[test]
-fn _0008() {
+fn _0009() {
   // Single short option with default value and default missing value.
   let expected = r#"
     Usage: clars [OPTIONS]
 
     Options:
-      -c  [default: auto] [implicit: always]
+      -c [<WHEN>]  [default: auto] [implicit: always]
   "#;
   let matches = Clar::new(APP)
-    .options([ClarOption::new_short("color", 'c')
+    .options([ClarOption::short("color", 'c')
+      .takes_value("WHEN")
       .default_value("auto")
       .default_missing_value("always")])
     .resolve(EMPTY_INPUT)
     .unwrap();
-  eq_msg(expected, matches.get_help());
-  eq_msg(expected, matches.get_help_long());
+  eq_text(expected, matches.get_help());
+  eq_text(expected, matches.get_help_long());
 }
 
 #[test]
-fn _0009() {
+fn _0010() {
   // Single short option with default value, default missing value and possible values.
   let expected = r#"
     Usage: clars [OPTIONS]
 
     Options:
-      -c  [default: auto] [implicit: always] (values: auto, always, never)
+      -c [<WHEN>]  [default: auto] [implicit: always] [possible values: auto, always, never]
   "#;
   let matches = Clar::new(APP)
-    .options([ClarOption::new_short("color", 'c')
+    .options([ClarOption::short("color", 'c')
+      .takes_value("WHEN")
       .default_value("auto")
       .default_missing_value("always")
       .possible_values(["auto", "always", "never"])])
     .resolve(EMPTY_INPUT)
     .unwrap();
-  eq_msg(expected, matches.get_help());
-  eq_msg(expected, matches.get_help_long());
+  eq_text(expected, matches.get_help());
+  eq_text(expected, matches.get_help_long());
 }
 
 #[test]
-fn _0010() {
+fn _0011() {
   // Single short option with help, default value, default missing value and possible values.
   let matches = Clar::new(APP)
-    .options([ClarOption::new_short("color", 'c')
+    .options([ClarOption::short("color", 'c')
+      .takes_value("WHEN")
       .default_value("auto")
       .default_missing_value("always")
       .possible_values(["auto", "always", "never"])
@@ -186,22 +204,22 @@ fn _0010() {
       .help_long("Beautiful coloring")])
     .resolve(EMPTY_INPUT)
     .unwrap();
-  eq_msg(
+  eq_text(
     r#"
     Usage: clars [OPTIONS]
 
     Options:
-      -c  Coloring [default: auto] [implicit: always] (values: auto, always, never)
+      -c [<WHEN>]  Coloring [default: auto] [implicit: always] [possible values: auto, always, never]
   "#,
     matches.get_help(),
   );
-  eq_msg(
+  eq_text(
     r#"
     Usage: clars [OPTIONS]
 
     Options:
-      -c  Beautiful coloring
-            [default: auto] [implicit: always] (values: auto, always, never)
+      -c [<WHEN>]  Beautiful coloring
+                     [default: auto] [implicit: always] [possible values: auto, always, never]
   "#,
     matches.get_help_long(),
   );

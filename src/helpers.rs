@@ -1,4 +1,3 @@
-use crate::ClarMatches;
 use antex::{ColorMode, StyledText, Text};
 use std::path::Path;
 
@@ -26,11 +25,6 @@ pub fn get_app_and_args() -> (String, Vec<String>) {
   (name, args.collect())
 }
 
-/// Returns the value of the first resolved argument with the given name.
-pub fn get_first_value(matches: &ClarMatches, name: &str) -> Option<String> {
-  matches.get_values(name).first().cloned().flatten()
-}
-
 /// Returns a colored text with more information hint.
 pub fn get_more_info_hint(cm: ColorMode, options: &[impl AsRef<str>]) -> Text {
   let mut text = Text::new(cm).s("For more information, try ");
@@ -38,13 +32,7 @@ pub fn get_more_info_hint(cm: ColorMode, options: &[impl AsRef<str>]) -> Text {
     if index > 0 {
       text += " or "
     }
-    text += Text::new(cm)
-      .s("'")
-      .bright_cyan()
-      .bold()
-      .s(option.as_ref())
-      .reset()
-      .s("'");
+    text += Text::new(cm).s("'").bright_cyan().bold().s(option.as_ref()).reset().s("'");
   }
   text
 }

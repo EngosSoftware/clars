@@ -1,4 +1,4 @@
-# Command line arguments resolution system
+# Command line arguments resolver
 
 ## Overview
 
