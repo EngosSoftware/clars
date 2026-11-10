@@ -15,24 +15,35 @@ use std::path::Path;
 /// assert_eq!(expected_app_args, args);
 ///
 /// ```
+///
+/// # Panics
+///
+/// //TODO Get rid of panics
+#[must_use]
 pub fn get_app_and_args() -> (String, Vec<String>) {
-  let mut args = std::env::args();
-  let name = Path::new(&args.next().expect("expected at least one argument"))
-    .file_name()
-    .expect("expected file name")
-    .display()
-    .to_string();
-  (name, args.collect())
+    let mut args = std::env::args();
+    let name = Path::new(&args.next().expect("expected at least one argument"))
+        .file_name()
+        .expect("expected file name")
+        .display()
+        .to_string();
+    (name, args.collect())
 }
 
 /// Returns a colored text with more information hint.
 pub fn get_more_info_hint(cm: ColorMode, options: &[impl AsRef<str>]) -> Text {
-  let mut text = Text::new(cm).s("For more information, try ");
-  for (index, option) in options.iter().enumerate() {
-    if index > 0 {
-      text += " or "
+    let mut text = Text::new(cm).s("For more information, try ");
+    for (index, option) in options.iter().enumerate() {
+        if index > 0 {
+            text += " or ";
+        }
+        text += Text::new(cm)
+            .s("'")
+            .bright_cyan()
+            .bold()
+            .s(option.as_ref())
+            .reset()
+            .s("'");
     }
-    text += Text::new(cm).s("'").bright_cyan().bold().s(option.as_ref()).reset().s("'");
-  }
-  text
+    text
 }

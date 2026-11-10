@@ -1,0 +1,96 @@
+.note To use these task definitions, run:
+      `cargo install task-commander`
+
+.vars
+  .RUST_TOOLCHAIN +stable
+
+.tasks
+
+  .all
+    .task clean
+    .task build
+    .task clippy
+    .task pedantic
+    .task test
+    .task doc
+    .task cov
+
+  .build
+    .desc Builds in debug mode
+    .cmd cargo {{RUST_TOOLCHAIN}} build
+
+  .check
+    .desc Performs checks in debug mode
+    .cmd cargo {{RUST_TOOLCHAIN}} check
+
+  .clean
+    .desc Cleans all targets
+    .cmd cargo {{RUST_TOOLCHAIN}} clean
+
+  .clippy
+    .desc Runs clippy for all targets
+    .cmd cargo {{RUST_TOOLCHAIN}} clippy --all-targets
+
+  .cov
+    .desc Generates code coverage report in text format
+    .cmd cargo {{RUST_TOOLCHAIN}} llvm-cov clean
+    .cmd cargo {{RUST_TOOLCHAIN}} llvm-cov --no-cfg-coverage
+
+  .cov-examples
+    .desc Generates code coverage report in text format from examples
+    .cmd cargo {{RUST_TOOLCHAIN}} llvm-cov clean
+    .cmd cargo {{RUST_TOOLCHAIN}} llvm-cov run --example sedi --no-report --no-cfg-coverage
+    .cmd cargo {{RUST_TOOLCHAIN}} llvm-cov report
+
+  .cov-html
+    .desc Generates code coverage report in HTML format
+    .cmd cargo {{RUST_TOOLCHAIN}} llvm-cov clean
+    .cmd cargo {{RUST_TOOLCHAIN}} llvm-cov --no-cfg-coverage --html
+
+  .cov-html-open
+    .desc Generates code coverage report in HTML format and opens in browser
+    .cmd cargo {{RUST_TOOLCHAIN}} llvm-cov clean
+    .cmd cargo {{RUST_TOOLCHAIN}} llvm-cov --no-cfg-coverage --html --open
+
+  .cov-badge
+    .desc Generates the detailed code coverage badge
+    .cmd cargo {{RUST_TOOLCHAIN}} llvm-cov clean
+    .cmd cargo {{RUST_TOOLCHAIN}} llvm-cov --no-cfg-coverage --json --summary-only | coverio -l coverage -c --tag cov-badge
+
+  .doc
+    .desc Generates documentation
+    .cmd cargo {{RUST_TOOLCHAIN}} doc --no-deps
+
+  .doc-open
+    .desc Generates documentation and opens it in browser
+    .cmd cargo {{RUST_TOOLCHAIN}} doc --no-deps --open
+
+  .doc-priv
+    .desc Generates documentation with private items
+    .cmd cargo {{RUST_TOOLCHAIN}} doc --no-deps --document-private-items
+
+  .doc-priv-open
+    .desc Generates documentation with private items and opens it in browser
+    .cmd cargo {{RUST_TOOLCHAIN}} doc --no-deps --open --document-private-items
+
+  .fmt
+    .desc Runs the code formatter
+    .cmd cargo +nightly fmt
+
+  .pedantic
+    .desc Runs pedantic linter
+    .cmd cargo {{RUST_TOOLCHAIN}} clippy --all-targets -- \
+         -D warnings -W clippy::pedantic -W clippy::nursery
+
+  .readme
+    .desc Regenerates README.md file
+    .cmd magg readme
+    .task cov-badge
+
+  .test
+    .desc Runs tests in debug mode
+    .cmd cargo {{RUST_TOOLCHAIN}} test
+
+  .testn
+    .desc Runs tests in debug mode using nextest
+    .cmd cargo {{RUST_TOOLCHAIN}} nextest run --no-fail-fast
