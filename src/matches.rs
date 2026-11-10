@@ -101,7 +101,7 @@ impl ClarMatches {
     pub fn get_help(&self) -> Text {
         messages::get_help_text(
             &self.app,
-            self.description.as_deref(),
+            self.description.as_ref(),
             &self.definition,
             false,
             self.cm,
@@ -112,7 +112,7 @@ impl ClarMatches {
     pub fn get_help_long(&self) -> Text {
         messages::get_help_text(
             &self.app,
-            self.description.as_deref(),
+            self.description.as_ref(),
             &self.definition,
             true,
             self.cm,

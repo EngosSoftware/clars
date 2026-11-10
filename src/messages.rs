@@ -25,7 +25,7 @@ pub fn get_error_text(
 
 pub fn get_help_text(
     app: &str,
-    description: Option<&str>,
+    description: Option<&String>,
     def: &ClarDefinition,
     detailed: bool,
     cm: ColorMode,
@@ -52,14 +52,14 @@ pub fn get_help_text_for_command(
                     .s("' is not defined")
         },
         |command| {
-            get_description(command.get_help().as_deref(), cm)
+            get_description(command.get_help().as_ref(), cm)
                 + get_usage(app, path.names(), command.get_definition(), cm)
                 + get_details(command.get_definition(), detailed, cm)
         },
     )
 }
 
-fn get_description(description: Option<&str>, cm: ColorMode) -> Text {
+fn get_description(description: Option<&String>, cm: ColorMode) -> Text {
     description.as_ref().map_or_else(
         || Text::new(cm),
         |description| Text::new(cm).s(description).s("\n\n"),

@@ -31,8 +31,8 @@ pub struct ClarOption {
     possible_values: Vec<String>,
     /// Maximum number of option occurrences.
     max_occurrences: Option<usize>,
-    /// Help content.
-    help: Option<String>,
+    /// Short help content.
+    help_short: Option<String>,
     /// Long help content.
     help_long: Option<String>,
     /// Path in the definition tree.
@@ -123,8 +123,14 @@ impl ClarOption {
 
     #[must_use]
     pub fn help(mut self, content: impl AsRef<str>) -> Self {
-        self.help = Some(content.as_ref().to_string());
+        self.help_short = Some(content.as_ref().to_string());
         self.help_long = Some(content.as_ref().to_string());
+        self
+    }
+
+    #[must_use]
+    pub fn help_short(mut self, content: impl AsRef<str>) -> Self {
+        self.help_short = Some(content.as_ref().to_string());
         self
     }
 
@@ -194,7 +200,7 @@ impl ClarOption {
 
     #[must_use]
     pub fn get_help(&self) -> Option<String> {
-        self.help.clone()
+        self.help_short.clone()
     }
 
     #[must_use]
