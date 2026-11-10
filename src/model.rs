@@ -134,13 +134,13 @@ impl ClarOption {
         self
     }
 
-    pub(crate) const fn get_short_label(&self) -> Option<&char> {
-        self.short_label.as_ref()
+    pub(crate) const fn get_short_label(&self) -> Option<char> {
+        self.short_label
     }
 
     #[must_use]
-    pub const fn get_long_label(&self) -> &Option<String> {
-        &self.long_label
+    pub fn get_long_label(&self) -> Option<String> {
+        self.long_label.clone()
     }
 
     pub(crate) fn get_synopsis(&self) -> String {
@@ -168,18 +168,18 @@ impl ClarOption {
     }
 
     #[must_use]
-    pub const fn get_default_value(&self) -> &Option<String> {
-        &self.default_value
+    pub fn get_default_value(&self) -> Option<String> {
+        self.default_value.clone()
     }
 
     #[must_use]
-    pub const fn get_default_missing_value(&self) -> &Option<String> {
-        &self.default_missing_value
+    pub fn get_default_missing_value(&self) -> Option<String> {
+        self.default_missing_value.clone()
     }
 
     #[must_use]
-    pub const fn get_takes_value(&self) -> &Option<String> {
-        &self.takes_value
+    pub fn get_takes_value(&self) -> Option<String> {
+        self.takes_value.clone()
     }
 
     #[must_use]
@@ -193,13 +193,13 @@ impl ClarOption {
     }
 
     #[must_use]
-    pub const fn get_help(&self) -> &Option<String> {
-        &self.help
+    pub fn get_help(&self) -> Option<String> {
+        self.help.clone()
     }
 
     #[must_use]
-    pub const fn get_help_long(&self) -> &Option<String> {
-        &self.help_long
+    pub fn get_help_long(&self) -> Option<String> {
+        self.help_long.clone()
     }
 
     fn set_path(&mut self, parent: &ClarPath) {
@@ -212,10 +212,10 @@ impl ClarOption {
 
     pub(crate) fn validate(&self) -> ClarResult<()> {
         if let Some(label) = self.get_short_label() {
-            Self::validate_short_label(*label)?;
+            Self::validate_short_label(label)?;
         }
         if let Some(label) = self.get_long_label() {
-            Self::validate_long_label(label)?;
+            Self::validate_long_label(&label)?;
         }
         if self.takes_value.is_none() {
             // Default value MAY be set only when the option is not a flag.
@@ -343,8 +343,8 @@ impl ClarArgument {
     }
 
     #[must_use]
-    pub const fn get_default_value(&self) -> &Option<String> {
-        &self.default_value
+    pub fn get_default_value(&self) -> Option<String> {
+        self.default_value.clone()
     }
 
     #[must_use]
@@ -353,14 +353,14 @@ impl ClarArgument {
     }
 
     #[must_use]
-    pub const fn get_help(&self) -> &Option<String> {
-        &self.help
+    pub fn get_help(&self) -> Option<String> {
+        self.help.clone()
     }
 
     #[must_use]
-    pub const fn get_help_long(&self) -> &Option<String> {
+    pub fn get_help_long(&self) -> Option<String> {
         if self.help_long.is_some() {
-            &self.help_long
+            self.help_long.clone()
         } else {
             self.get_help()
         }
@@ -532,14 +532,14 @@ impl ClarCommand {
     }
 
     #[must_use]
-    pub fn get_help(&self) -> Option<&str> {
-        self.help.as_deref()
+    pub fn get_help(&self) -> Option<String> {
+        self.help.clone()
     }
 
     #[must_use]
-    pub fn get_help_long(&self) -> Option<&str> {
+    pub fn get_help_long(&self) -> Option<String> {
         if self.help_long.is_some() {
-            self.help_long.as_deref()
+            self.help_long.clone()
         } else {
             self.get_help()
         }

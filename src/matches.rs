@@ -145,14 +145,14 @@ impl ClarMatches {
                 ClarItem::Options(options) => {
                     for option in options {
                         if option.get_path() == path && option.get_takes_value().is_some() {
-                            return option.get_default_value().clone();
+                            return option.get_default_value();
                         }
                     }
                 }
                 ClarItem::Arguments(arguments) => {
                     for argument in arguments {
                         if argument.get_path() == path {
-                            return argument.get_default_value().clone();
+                            return argument.get_default_value();
                         }
                     }
                 }

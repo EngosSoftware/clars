@@ -52,7 +52,7 @@ pub fn get_help_text_for_command(
                     .s("' is not defined")
         },
         |command| {
-            get_description(command.get_help(), cm)
+            get_description(command.get_help().as_deref(), cm)
                 + get_usage(app, path.names(), command.get_definition(), cm)
                 + get_details(command.get_definition(), detailed, cm)
         },
@@ -180,13 +180,10 @@ fn get_details_for_options(options: &[ClarOption], detailed: bool, cm: ColorMode
         let details = if detailed {
             format!(
                 "{}{option_hints}",
-                option.get_help_long().clone().unwrap_or_default()
+                option.get_help_long().unwrap_or_default()
             )
         } else {
-            format!(
-                "{}{option_hints}",
-                option.get_help().clone().unwrap_or_default()
-            )
+            format!("{}{option_hints}", option.get_help().unwrap_or_default())
         };
         if details.is_empty() {
             text += Text::new(cm) + INDENT + caption + NL;
@@ -214,9 +211,9 @@ fn get_details_for_subcommands(commands: &[ClarCommand], detailed: bool, cm: Col
     // Prepare detailed descriptions.
     for (command, caption) in commands.iter().zip(captions) {
         let details = if detailed {
-            get_indented_column(command.get_help_long().unwrap_or_default(), column_width)
+            get_indented_column(&command.get_help_long().unwrap_or_default(), column_width)
         } else {
-            get_indented_column(command.get_help().unwrap_or_default(), column_width)
+            get_indented_column(&command.get_help().unwrap_or_default(), column_width)
         };
         text += Text::new(cm) + INDENT + caption.fill(' ', column_width) + DISTANCE + details + NL;
     }
@@ -236,15 +233,9 @@ fn get_details_for_arguments(arguments: &[ClarArgument], detailed: bool, cm: Col
     // Prepare detailed descriptions.
     for (argument, caption) in arguments.iter().zip(captions) {
         let details = if detailed {
-            get_indented_column(
-                &argument.get_help_long().clone().unwrap_or_default(),
-                column_width,
-            )
+            get_indented_column(&argument.get_help_long().unwrap_or_default(), column_width)
         } else {
-            get_indented_column(
-                &argument.get_help().clone().unwrap_or_default(),
-                column_width,
-            )
+            get_indented_column(&argument.get_help().unwrap_or_default(), column_width)
         };
         text += Text::new(cm) + INDENT + caption.fill(' ', column_width) + DISTANCE + details + NL;
     }

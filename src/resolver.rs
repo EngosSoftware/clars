@@ -214,7 +214,7 @@ impl Clar {
                         if option.is_standalone() {
                             if let Some(short_label) = option.get_short_label() {
                                 standalone_options_evaluators
-                                    .push(ev_short_option(*short_label, option.into()));
+                                    .push(ev_short_option(short_label, option.into()));
                             }
                             if let Some(long_label) = option.get_long_label() {
                                 standalone_options_evaluators
@@ -223,7 +223,7 @@ impl Clar {
                         } else {
                             if let Some(short_label) = option.get_short_label() {
                                 options_evaluators
-                                    .push(ev_short_option(*short_label, option.into()));
+                                    .push(ev_short_option(short_label, option.into()));
                             }
                             if let Some(long_label) = option.get_long_label() {
                                 options_evaluators.push(ev_long_option(long_label, option.into()));

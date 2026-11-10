@@ -120,8 +120,8 @@ impl From<&ClarOption> for EvalOption {
         Self {
             path: value.get_path().clone(),
             standalone: value.is_standalone(),
-            takes_value: value.get_takes_value().clone(),
-            default_missing_value: value.get_default_missing_value().clone(),
+            takes_value: value.get_takes_value(),
+            default_missing_value: value.get_default_missing_value(),
             possible_values: value.get_possible_values().clone(),
             synopsis: value.get_synopsis(),
         }
