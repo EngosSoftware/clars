@@ -469,3 +469,39 @@ fn _0016() {
       .unwrap_err(),
   );
 }
+
+#[test]
+fn _0017() {
+  // Given: Two short options with standalone flag, one option takes a value.
+  //  When: Short option with value is given on input.
+  //  Then: Short option with value is resolved.
+  let matches = Clar::new(APP)
+    .options([
+      ClarOption::short("help", 'h').standalone(),
+      ClarOption::short("task", 't').standalone().takes_value("FILE"),
+    ])
+    .resolve(["-t", "file.txt"])
+    .unwrap();
+  assert!(matches.is_present("task"));
+  assert!(matches.is_short("task"));
+  assert!(!matches.is_long("task"));
+  assert_eq!("file.txt", matches.get_first_value("task").unwrap());
+}
+
+#[test]
+fn _0018() {
+  // Given: Two long options with standalone flag, one option takes a value.
+  //  When: Long option with value is given on input.
+  //  Then: Long option with value is resolved.
+  let matches = Clar::new(APP)
+    .options([
+      ClarOption::long("help", "help").standalone(),
+      ClarOption::long("task", "task").standalone().takes_value("FILE"),
+    ])
+    .resolve(["--task=file.txt"])
+    .unwrap();
+  assert!(matches.is_present("task"));
+  assert!(!matches.is_short("task"));
+  assert!(matches.is_long("task"));
+  assert_eq!("file.txt", matches.get_first_value("task").unwrap());
+}

@@ -188,9 +188,6 @@ pub fn ev_short_option(label: char, option: EvalOption) -> Evaluator {
         && label == short_label
       {
         tokens.pop_front();
-        if option.standalone && !tokens.is_empty() {
-          return Err(err_short_option_must_be_used_alone(short_label));
-        }
         if option.takes_value.is_none() && value.is_some() {
           return Err(err_short_option_does_not_accept_value(short_label));
         }
@@ -216,6 +213,9 @@ pub fn ev_short_option(label: char, option: EvalOption) -> Evaluator {
             option.possible_values.clone(),
           ));
         }
+        if option.standalone && !tokens.is_empty() {
+          return Err(err_short_option_must_be_used_alone(short_label));
+        }
         values.push(Value::short(option.path.clone(), value));
         Ok(Status::Match)
       } else {
@@ -236,9 +236,6 @@ pub fn ev_long_option(label: impl AsRef<str>, option: EvalOption) -> Evaluator {
         && label == long_label
       {
         tokens.pop_front();
-        if option.standalone && !tokens.is_empty() {
-          return Err(err_long_option_must_be_used_alone(long_label));
-        }
         if option.takes_value.is_none() && value.is_some() {
           return Err(err_long_option_does_not_accept_value(long_label));
         }
@@ -263,6 +260,9 @@ pub fn ev_long_option(label: impl AsRef<str>, option: EvalOption) -> Evaluator {
             value.clone(),
             option.possible_values.clone(),
           ));
+        }
+        if option.standalone && !tokens.is_empty() {
+          return Err(err_long_option_must_be_used_alone(long_label));
         }
         values.push(Value::long(option.path.clone(), value));
         Ok(Status::Match)
