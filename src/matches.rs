@@ -74,7 +74,6 @@ impl ClarMatches {
       .filter(|v| path.eq(v.path()))
       .flat_map(|v| v.value())
       .collect::<Vec<Option<String>>>();
-    println!("DDD: c = {}", values.is_empty());
     if values.is_empty()
       && let value @ Some(_) = self.default_value(&path)
     {
@@ -86,7 +85,6 @@ impl ClarMatches {
   /// Returns the value of the first resolved option, command or argument
   /// with the given path.
   pub fn get_first_value(&self, path: impl IntoClarPath) -> Option<String> {
-    println!("DDD: b");
     self.get_values(path).first().cloned().flatten()
   }
 
@@ -107,7 +105,6 @@ impl ClarMatches {
   }
 
   fn default_value(&self, path: &ClarPath) -> Option<String> {
-    println!("DDD: a");
     for item in self.definition.items() {
       match item {
         ClarItem::Options(options) => {
