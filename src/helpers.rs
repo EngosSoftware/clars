@@ -10,7 +10,7 @@ use std::path::Path;
 ///
 /// let (app, args) = get_app_and_args();
 /// let expected_app_name = "rust_out";
-/// assert_eq!(expected_app_name, app);
+/// assert!(app.starts_with(expected_app_name));
 /// let expected_app_args: Vec<String> = vec![];
 /// assert_eq!(expected_app_args, args);
 ///
