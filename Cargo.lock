@@ -10,7 +10,7 @@ checksum = "75e1f0fdb887148f0a7dc46f809de8f567dcdacabe2d553c5a624aed82dc5d68"
 
 [[package]]
 name = "clars"
-version = "0.4.0-dev"
+version = "0.4.0"
 dependencies = [
  "antex",
 ]
