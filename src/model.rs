@@ -125,17 +125,17 @@ impl ClarOption {
   pub(crate) fn get_synopsis(&self) -> String {
     let mut label = String::new();
     if let Some(short) = self.get_short_label() {
-      _ = write!(&mut label, "-{}", short);
+      _ = write!(&mut label, "-{short}");
     }
     if let Some(long) = self.get_long_label() {
       label.clear();
-      _ = write!(&mut label, "--{}", long);
+      _ = write!(&mut label, "--{long}");
     }
     if let Some(value_caption) = &self.takes_value {
       if self.default_missing_value.is_some() {
-        _ = write!(&mut label, " [<{}>]", value_caption);
+        _ = write!(&mut label, " [<{value_caption}>]");
       } else {
-        _ = write!(&mut label, " <{}>", value_caption);
+        _ = write!(&mut label, " <{value_caption}>");
       }
     }
     label
@@ -231,10 +231,8 @@ impl ClarOption {
         if !ch.is_ascii_alphabetic() {
           return Err(err_long_option_must_start_with_letter(label.to_string()));
         }
-      } else {
-        if !(ch.is_ascii_alphanumeric() || ch == '-') {
-          return Err(err_long_option_must_contain_letters_digits_hyphens(label.to_string()));
-        }
+      } else if !(ch.is_ascii_alphanumeric() || ch == '-') {
+        return Err(err_long_option_must_contain_letters_digits_hyphens(label.to_string()));
       }
     }
     Ok(())
@@ -488,10 +486,8 @@ impl ClarCommand {
         if !self.is_valid_name_start(ch) {
           return Err(err_command_must_start_with_letter(self.name.to_string()));
         }
-      } else {
-        if !self.is_valid_name_char(ch) {
-          return Err(err_command_must_contain_letters_digits_hyphens(self.name.to_string()));
-        }
+      } else if !self.is_valid_name_char(ch) {
+        return Err(err_command_must_contain_letters_digits_hyphens(self.name.to_string()));
       }
     }
     Ok(())
@@ -661,18 +657,18 @@ impl ClarDefinition {
   /// Validates command-line definition.
   pub fn validate(&mut self) -> ClarResult<()> {
     update_paths(&mut self.items, &ClarPath::default());
-    self.validate_items(self)?;
+    Self::validate_items(self)?;
     Ok(())
   }
 
   /// Validates command-line items in definition.
-  fn validate_items(&self, def: &ClarDefinition) -> ClarResult<()> {
+  fn validate_items(def: &ClarDefinition) -> ClarResult<()> {
     for item in def.items() {
       match item {
         ClarItem::Commands(commands) => {
           for command in commands {
             command.validate()?;
-            self.validate_items(&command.definition)?;
+            Self::validate_items(&command.definition)?;
           }
         }
         ClarItem::Options(options) => {
@@ -693,11 +689,11 @@ impl ClarDefinition {
 
   pub fn get_options(&self) -> HashMap<&ClarPath, &ClarOption> {
     let mut option_map = HashMap::new();
-    self.collect_options(&self.items, &mut option_map);
+    Self::collect_options(&self.items, &mut option_map);
     option_map
   }
 
-  fn collect_options<'a>(&self, items: &'a [ClarItem], map: &mut HashMap<&'a ClarPath, &'a ClarOption>) {
+  fn collect_options<'a>(items: &'a [ClarItem], map: &mut HashMap<&'a ClarPath, &'a ClarOption>) {
     for item in items {
       match item {
         ClarItem::Options(options) => {
@@ -707,7 +703,7 @@ impl ClarDefinition {
         }
         ClarItem::Commands(commands) => {
           for command in commands {
-            self.collect_options(command.get_definition().items(), map);
+            Self::collect_options(command.get_definition().items(), map);
           }
         }
         _ => {}
@@ -717,16 +713,16 @@ impl ClarDefinition {
 
   pub fn get_commands(&self) -> HashMap<&ClarPath, &ClarCommand> {
     let mut map = HashMap::new();
-    self.collect_commands(&self.items, &mut map);
+    Self::collect_commands(&self.items, &mut map);
     map
   }
 
-  fn collect_commands<'a>(&self, items: &'a [ClarItem], map: &mut HashMap<&'a ClarPath, &'a ClarCommand>) {
+  fn collect_commands<'a>(items: &'a [ClarItem], map: &mut HashMap<&'a ClarPath, &'a ClarCommand>) {
     for item in items {
       if let ClarItem::Commands(commands) = item {
         for command in commands {
           map.insert(command.get_path(), command);
-          self.collect_commands(command.get_definition().items(), map);
+          Self::collect_commands(command.get_definition().items(), map);
         }
       }
     }

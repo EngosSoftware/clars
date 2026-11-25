@@ -90,7 +90,7 @@ fn expected_values(input: &Input) -> Vec<Option<String>> {
     (2, false, true, _, true) => vec![some!("B"), some!("B")],
     (2, true, true, _, _) => vec![some!("never"), some!("Y")],
     (2, ..) => vec![VALUE_NONE, VALUE_NONE],
-    (other, ..) => panic!("invalid number of appearances: {}", other),
+    (other, ..) => panic!("invalid number of appearances: {other}"),
   }
 }
 

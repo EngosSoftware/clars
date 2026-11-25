@@ -140,7 +140,7 @@ impl Clar {
       ClarDiagnostic::new(reason, text)
     })?;
     // Prepare evaluator for command-line arguments based on definitions.
-    let evaluator = ev_consumed(self.build_evaluator(&self.definition));
+    let evaluator = ev_consumed(Self::build_evaluator(&self.definition));
     // Resolve command-line arguments using evaluator.
     let mut values = vec![];
     let result = evaluator(&mut tokens, &mut values);
@@ -166,7 +166,7 @@ impl Clar {
   }
 
   /// Returns the evaluator for the command line arguments.
-  fn build_evaluator(&self, definition: &ClarDefinition) -> Evaluator {
+  fn build_evaluator(definition: &ClarDefinition) -> Evaluator {
     let mut evaluators = vec![];
     for item in definition.items() {
       match item {
@@ -196,7 +196,7 @@ impl Clar {
         ClarItem::Commands(commands) => {
           let mut command_evaluators = vec![];
           for command in commands {
-            command_evaluators.push(ev_command_and_then(command.into(), self.build_evaluator(command.get_definition())));
+            command_evaluators.push(ev_command_and_then(command.into(), Self::build_evaluator(command.get_definition())));
           }
           evaluators.push(ev_one(command_evaluators));
         }

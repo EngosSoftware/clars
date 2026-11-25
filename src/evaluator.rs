@@ -183,44 +183,42 @@ pub fn ev_short_option(label: char, option: EvalOption) -> Evaluator {
   Box::new(move |tokens, values| -> ClarResult<Status> {
     if tokens.is_empty() {
       Ok(Status::NoMatch)
-    } else {
-      if let Some(Token::ShortOption(short_label, mut value)) = tokens.front().cloned()
-        && label == short_label
-      {
-        tokens.pop_front();
-        if option.takes_value.is_none() && value.is_some() {
-          return Err(err_short_option_does_not_accept_value(short_label));
-        }
-        if let Some(caption) = &option.takes_value
-          && value.is_none()
-        {
-          if let Some(Token::Argument(argument_value)) = tokens.front().cloned() {
-            tokens.pop_front();
-            value = Some(argument_value);
-          } else if option.default_missing_value.is_some() {
-            value = option.default_missing_value.clone();
-          } else {
-            return Err(err_short_option_requires_value(short_label, caption.clone()));
-          }
-        }
-        if !option.possible_values.is_empty()
-          && let Some(value) = &value
-          && !option.possible_values.contains(value)
-        {
-          return Err(err_invalid_value_for_option(
-            option.synopsis.clone(),
-            value.clone(),
-            option.possible_values.clone(),
-          ));
-        }
-        if option.standalone && !tokens.is_empty() {
-          return Err(err_short_option_must_be_used_alone(short_label));
-        }
-        values.push(Value::short(option.path.clone(), value));
-        Ok(Status::Match)
-      } else {
-        Ok(Status::NoMatch)
+    } else if let Some(Token::ShortOption(short_label, mut value)) = tokens.front().cloned()
+      && label == short_label
+    {
+      tokens.pop_front();
+      if option.takes_value.is_none() && value.is_some() {
+        return Err(err_short_option_does_not_accept_value(short_label));
       }
+      if let Some(caption) = &option.takes_value
+        && value.is_none()
+      {
+        if let Some(Token::Argument(argument_value)) = tokens.front().cloned() {
+          tokens.pop_front();
+          value = Some(argument_value);
+        } else if option.default_missing_value.is_some() {
+          value = option.default_missing_value.clone();
+        } else {
+          return Err(err_short_option_requires_value(short_label, caption.clone()));
+        }
+      }
+      if !option.possible_values.is_empty()
+        && let Some(value) = &value
+        && !option.possible_values.contains(value)
+      {
+        return Err(err_invalid_value_for_option(
+          option.synopsis.clone(),
+          value.clone(),
+          option.possible_values.clone(),
+        ));
+      }
+      if option.standalone && !tokens.is_empty() {
+        return Err(err_short_option_must_be_used_alone(short_label));
+      }
+      values.push(Value::short(option.path.clone(), value));
+      Ok(Status::Match)
+    } else {
+      Ok(Status::NoMatch)
     }
   })
 }
@@ -231,44 +229,42 @@ pub fn ev_long_option(label: impl AsRef<str>, option: EvalOption) -> Evaluator {
   Box::new(move |tokens, values| -> ClarResult<Status> {
     if tokens.is_empty() {
       Ok(Status::NoMatch)
-    } else {
-      if let Some(Token::LongOption(long_label, mut value)) = tokens.front().cloned()
-        && label == long_label
-      {
-        tokens.pop_front();
-        if option.takes_value.is_none() && value.is_some() {
-          return Err(err_long_option_does_not_accept_value(long_label));
-        }
-        if let Some(caption) = &option.takes_value
-          && value.is_none()
-        {
-          if let Some(Token::Argument(argument_value)) = tokens.front().cloned() {
-            tokens.pop_front();
-            value = Some(argument_value);
-          } else if option.default_missing_value.is_some() {
-            value = option.default_missing_value.clone();
-          } else {
-            return Err(err_long_option_requires_value(long_label, caption.clone()));
-          }
-        }
-        if !option.possible_values.is_empty()
-          && let Some(value) = &value
-          && !option.possible_values.contains(value)
-        {
-          return Err(err_invalid_value_for_option(
-            option.synopsis.clone(),
-            value.clone(),
-            option.possible_values.clone(),
-          ));
-        }
-        if option.standalone && !tokens.is_empty() {
-          return Err(err_long_option_must_be_used_alone(long_label));
-        }
-        values.push(Value::long(option.path.clone(), value));
-        Ok(Status::Match)
-      } else {
-        Ok(Status::NoMatch)
+    } else if let Some(Token::LongOption(long_label, mut value)) = tokens.front().cloned()
+      && label == long_label
+    {
+      tokens.pop_front();
+      if option.takes_value.is_none() && value.is_some() {
+        return Err(err_long_option_does_not_accept_value(long_label));
       }
+      if let Some(caption) = &option.takes_value
+        && value.is_none()
+      {
+        if let Some(Token::Argument(argument_value)) = tokens.front().cloned() {
+          tokens.pop_front();
+          value = Some(argument_value);
+        } else if option.default_missing_value.is_some() {
+          value = option.default_missing_value.clone();
+        } else {
+          return Err(err_long_option_requires_value(long_label, caption.clone()));
+        }
+      }
+      if !option.possible_values.is_empty()
+        && let Some(value) = &value
+        && !option.possible_values.contains(value)
+      {
+        return Err(err_invalid_value_for_option(
+          option.synopsis.clone(),
+          value.clone(),
+          option.possible_values.clone(),
+        ));
+      }
+      if option.standalone && !tokens.is_empty() {
+        return Err(err_long_option_must_be_used_alone(long_label));
+      }
+      values.push(Value::long(option.path.clone(), value));
+      Ok(Status::Match)
+    } else {
+      Ok(Status::NoMatch)
     }
   })
 }
@@ -278,27 +274,25 @@ pub fn ev_command(command: EvalCommand) -> Evaluator {
   Box::new(move |tokens, values| -> ClarResult<Status> {
     if tokens.is_empty() {
       Ok(Status::NoMatch)
-    } else {
-      if let Token::Argument(value) = &tokens[0]
-        && command.name.eq(value)
-      {
-        tokens.pop_front();
-        // Remove all parent commands from already resolved values.
-        // Only the 'leaf' command should be left in resolved values
-        if let Some(parent_path) = command.path.parent() {
-          values.retain(|value| {
-            if let Value::Command(path) = value {
-              return parent_path.ne(path);
-            }
-            true
-          });
-        }
-        // A new command is resolved.
-        values.push(Value::command(command.path.clone()));
-        Ok(Status::Match)
-      } else {
-        Ok(Status::NoMatch)
+    } else if let Token::Argument(value) = &tokens[0]
+      && command.name.eq(value)
+    {
+      tokens.pop_front();
+      // Remove all parent commands from already resolved values.
+      // Only the 'leaf' command should be left in resolved values
+      if let Some(parent_path) = command.path.parent() {
+        values.retain(|value| {
+          if let Value::Command(path) = value {
+            return parent_path.ne(path);
+          }
+          true
+        });
       }
+      // A new command is resolved.
+      values.push(Value::command(command.path.clone()));
+      Ok(Status::Match)
+    } else {
+      Ok(Status::NoMatch)
     }
   })
 }

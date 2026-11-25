@@ -69,16 +69,16 @@ fn main() -> ExitCode {
   let (app, args) = get_app_and_args();
   match get_action(app, args) {
     CliAction::ShowHelp(text) => {
-      println!("{}", text)
+      println!("{text}")
     }
     CliAction::ShowVersion => {
       println!("0.0.1")
     }
     CliAction::Replace(pattern, replacement, file) => {
-      println!("Replaced '{}' with '{}' in file '{}'", pattern, replacement, file)
+      println!("Replaced '{pattern}' with '{replacement}' in file '{file}'")
     }
     CliAction::Error(text) => {
-      eprintln!("{}", text);
+      eprintln!("{text}");
       eprintln!("{}", get_more_info_hint(ColorMode::default(), &["-h", "--help"]));
       return ExitCode::FAILURE;
     }
