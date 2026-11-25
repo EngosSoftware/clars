@@ -4,9 +4,9 @@ version = 4
 
 [[package]]
 name = "antex"
-version = "0.2.3"
+version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "687780ea2bbba1364204a233437806670f023d79becd25c40abdb2609c6a62ba"
+checksum = "75e1f0fdb887148f0a7dc46f809de8f567dcdacabe2d553c5a624aed82dc5d68"
 
 [[package]]
 name = "clars"
