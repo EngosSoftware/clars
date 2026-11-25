@@ -5,6 +5,11 @@
 .vars
   .RUST_TOOLCHAIN +1.88.0
 
+.profiles
+  .stable
+    .vars
+      .RUST_TOOLCHAIN +stable
+
 .tasks
 
   .all

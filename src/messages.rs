@@ -78,9 +78,9 @@ fn get_usage(app: &str, names: &[String], def: &ClarDefinition, cm: ColorMode) -
         .s(app)
         .reset();
     // Append command names if present.
-    names
-        .iter()
-        .for_each(|name| usage += Text::new(cm).s(' ').bright_cyan().bold().s(name).reset());
+    for name in names {
+        usage += Text::new(cm).s(' ').bright_cyan().bold().s(name).reset();
+    }
     // Append usage messages for specific items.
     for item in def.items() {
         match item {
@@ -353,11 +353,10 @@ fn error_label(color: Color, cm: ColorMode) -> Text {
 /// default missing value and possible values.
 fn option_hints(option: &ClarOption, long_help: bool) -> String {
     let mut hints = String::new();
-    let mut prefix = "";
-    if let Some(value) = option.get_default_value() {
+    let mut prefix = option.get_default_value().map_or("", |value| {
         _ = write!(&mut hints, "[default: {value}]");
-        prefix = " ";
-    }
+        " "
+    });
     if let Some(value) = option.get_default_missing_value() {
         _ = write!(&mut hints, "{prefix}[implicit: {value}]");
         prefix = " ";

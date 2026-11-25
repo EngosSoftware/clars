@@ -150,7 +150,8 @@ impl Clar {
     /// Resolves command line arguments.
     ///
     /// # Errors
-    /// TODO Describe errors
+    ///
+    /// //TODO Add error description
     pub fn resolve<I, S>(mut self, input: I) -> ClarDiagnosticResult<ClarMatches>
     where
         I: IntoIterator<Item = S>,

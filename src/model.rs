@@ -568,11 +568,11 @@ impl ClarCommand {
         for (index, ch) in self.name.chars().enumerate() {
             if index == 0 {
                 if !is_valid_name_start(ch) {
-                    return Err(err_command_must_start_with_letter(self.name.to_string()));
+                    return Err(err_command_must_start_with_letter(self.name.clone()));
                 }
             } else if !is_valid_name_char(ch) {
                 return Err(err_command_must_contain_letters_digits_hyphens(
-                    self.name.to_string(),
+                    self.name.clone(),
                 ));
             }
         }
