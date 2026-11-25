@@ -9,7 +9,7 @@ fn valid_short_option_labels_should_work() {
   for label in valid_labels {
     let matches = Clar::new(APP)
       .options(vec![ClarOption::short("option", label)])
-      .resolve([format!("-{}", label)])
+      .resolve([format!("-{label}")])
       .unwrap();
     assert!(matches.is_present("option"));
   }
@@ -21,7 +21,7 @@ fn valid_long_option_labels_should_work() {
   for label in labels {
     let matches = Clar::new(APP)
       .options(vec![ClarOption::long("option", label)])
-      .resolve([format!("--{}", label)])
+      .resolve([format!("--{label}")])
       .unwrap();
     assert!(matches.is_present("option"));
   }
