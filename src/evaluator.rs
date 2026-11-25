@@ -1,4 +1,11 @@
-use crate::errors::*;
+use crate::errors::{
+    ClarResult, err_invalid_value_for_option, err_long_option_does_not_accept_value,
+    err_long_option_must_be_used_alone, err_long_option_requires_value,
+    err_missing_required_argument, err_missing_required_terminator,
+    err_short_option_does_not_accept_value, err_short_option_must_be_used_alone,
+    err_short_option_requires_value, err_unexpected_argument, err_unexpected_long_option,
+    err_unexpected_option_terminator, err_unexpected_short_option,
+};
 use crate::lexer::Token;
 use crate::path::ClarPath;
 use crate::{ClarArgument, ClarCommand, ClarOption, ClarTerminator};
@@ -44,57 +51,56 @@ pub enum Value {
 }
 
 impl Value {
-    pub fn short(path: ClarPath, value: Option<String>) -> Self {
-        Value::ShortOption(path, value)
+    pub const fn short(path: ClarPath, value: Option<String>) -> Self {
+        Self::ShortOption(path, value)
     }
 
-    pub fn long(path: ClarPath, value: Option<String>) -> Self {
-        Value::LongOption(path, value)
+    pub const fn long(path: ClarPath, value: Option<String>) -> Self {
+        Self::LongOption(path, value)
     }
 
-    pub fn command(path: ClarPath) -> Self {
-        Value::Command(path)
+    pub const fn command(path: ClarPath) -> Self {
+        Self::Command(path)
     }
 
-    pub fn argument(path: ClarPath, value: String, present: bool) -> Self {
-        Value::Argument(path, value, present)
+    pub const fn argument(path: ClarPath, value: String, present: bool) -> Self {
+        Self::Argument(path, value, present)
     }
 
-    pub fn terminator(path: ClarPath, values: Vec<String>) -> Self {
-        Value::OptionTerminator(path, values)
+    pub const fn terminator(path: ClarPath, values: Vec<String>) -> Self {
+        Self::OptionTerminator(path, values)
     }
 
     /// Returns the path in definition tree.
-    pub fn path(&self) -> &ClarPath {
+    pub const fn path(&self) -> &ClarPath {
         match self {
-            Value::ShortOption(path, _) => path,
-            Value::LongOption(path, _) => path,
-            Value::Command(path) => path,
-            Value::Argument(path, _, _) => path,
-            Value::OptionTerminator(path, _) => path,
+            Self::ShortOption(path, _)
+            | Self::LongOption(path, _)
+            | Self::Command(path)
+            | Self::Argument(path, _, _)
+            | Self::OptionTerminator(path, _) => path,
         }
     }
 
     /// Returns the value.
     pub fn value(&self) -> Vec<Option<String>> {
         match self {
-            Value::ShortOption(_, value) => vec![value.clone()],
-            Value::LongOption(_, value) => vec![value.clone()],
-            Value::Argument(_, value, _) => vec![Some(value.clone())],
-            Value::Command(_) => vec![],
-            Value::OptionTerminator(_, value) => value.iter().map(|s| Some(s.clone())).collect(),
+            Self::ShortOption(_, value) | Self::LongOption(_, value) => vec![value.clone()],
+            Self::Argument(_, value, _) => vec![Some(value.clone())],
+            Self::Command(_) => vec![],
+            Self::OptionTerminator(_, value) => value.iter().map(|s| Some(s.clone())).collect(),
         }
     }
 
     /// Returns `true` if the value for option, argument or subcommand was present in the input
     /// and was not taken from the default value in definition.
-    pub fn is_present(&self) -> bool {
+    pub const fn is_present(&self) -> bool {
         match self {
-            Value::ShortOption(_, _) => true,
-            Value::LongOption(_, _) => true,
-            Value::Argument(_, _, present) => *present,
-            Value::Command(_) => true,
-            Value::OptionTerminator(_, _) => true,
+            Self::ShortOption(_, _)
+            | Self::LongOption(_, _)
+            | Self::Command(_)
+            | Self::OptionTerminator(_, _) => true,
+            Self::Argument(_, _, present) => *present,
         }
     }
 }
@@ -114,10 +120,10 @@ impl From<&ClarOption> for EvalOption {
         Self {
             path: value.get_path().clone(),
             standalone: value.is_standalone(),
-            takes_value: value.get_takes_value().clone(),
-            default_missing_value: value.get_default_missing_value().clone(),
+            takes_value: value.get_takes_value(),
+            default_missing_value: value.get_default_missing_value(),
             possible_values: value.get_possible_values().clone(),
-            synopsis: value.get_synopsis().clone(),
+            synopsis: value.get_synopsis(),
         }
     }
 }
@@ -197,7 +203,7 @@ pub fn ev_short_option(label: char, option: EvalOption) -> Evaluator {
                     tokens.pop_front();
                     value = Some(argument_value);
                 } else if option.default_missing_value.is_some() {
-                    value = option.default_missing_value.clone();
+                    value.clone_from(&option.default_missing_value);
                 } else {
                     return Err(err_short_option_requires_value(
                         short_label,
@@ -246,7 +252,7 @@ pub fn ev_long_option(label: impl AsRef<str>, option: EvalOption) -> Evaluator {
                     tokens.pop_front();
                     value = Some(argument_value);
                 } else if option.default_missing_value.is_some() {
-                    value = option.default_missing_value.clone();
+                    value.clone_from(&option.default_missing_value);
                 } else {
                     return Err(err_long_option_requires_value(long_label, caption.clone()));
                 }
@@ -323,7 +329,7 @@ pub fn ev_argument(argument: EvalArgument) -> Evaluator {
             },
             None => {
                 if argument.required {
-                    Err(err_missing_required_argument(argument.caption.clone()))
+                    Err(err_missing_required_argument(&argument.caption))
                 } else {
                     Ok(Status::NoMatch)
                 }
@@ -368,7 +374,7 @@ pub fn ev_option_terminator(terminator: EvalOptionTerminator) -> Evaluator {
 pub fn ev_stop_on_one(evaluators: Vec<Evaluator>) -> Evaluator {
     Box::new(move |tokens, values| -> ClarResult<Status> {
         for evaluator in &evaluators {
-            if let Status::Match = evaluator(tokens, values)? {
+            if evaluator(tokens, values)? == Status::Match {
                 return Ok(Status::Stop);
             }
         }
@@ -384,7 +390,7 @@ pub fn ev_zero_or_more_options(evaluators: Vec<Evaluator>) -> Evaluator {
         loop {
             let mut matched = false;
             for evaluator in &evaluators {
-                if let Status::Match = evaluator(tokens, values)? {
+                if evaluator(tokens, values)? == Status::Match {
                     matched = true;
                     status = Status::Match;
                 }
@@ -452,15 +458,12 @@ pub fn ev_consumed(evaluator: Evaluator) -> Evaluator {
 }
 
 fn expect_no_more_tokens(tokens: &VecDeque<Token>) -> ClarResult<()> {
-    match tokens.front() {
-        Some(token) => match token {
-            Token::ShortOption(short_label, _) => Err(err_unexpected_short_option(*short_label)),
-            Token::LongOption(long_label, _) => Err(err_unexpected_long_option(long_label.clone())),
-            Token::Argument(value) => Err(err_unexpected_argument(value.clone())),
-            Token::OptionTerminator(_) => Err(err_unexpected_option_terminator()),
-        },
-        None => Ok(()),
-    }
+    tokens.front().map_or(Ok(()), |token| match token {
+        Token::ShortOption(short_label, _) => Err(err_unexpected_short_option(*short_label)),
+        Token::LongOption(long_label, _) => Err(err_unexpected_long_option(long_label.clone())),
+        Token::Argument(value) => Err(err_unexpected_argument(value.clone())),
+        Token::OptionTerminator(_) => Err(err_unexpected_option_terminator()),
+    })
 }
 
 #[cfg(test)]

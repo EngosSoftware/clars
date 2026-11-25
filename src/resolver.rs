@@ -39,18 +39,21 @@ impl Clar {
     }
 
     /// Sets application description.
+    #[must_use]
     pub fn description(mut self, description: impl AsRef<str>) -> Self {
         self.description = Some(description.as_ref().to_string());
         self
     }
 
     /// Returns a resolver that recognizes an option terminator.
+    #[must_use]
     pub fn terminator(mut self, option_terminator: ClarTerminator) -> Self {
         self.definition.terminator(option_terminator);
         self
     }
 
     /// Returns a resolver that recognizes options.
+    #[must_use]
     pub fn options<O>(mut self, options: O) -> Self
     where
         O: IntoIterator<Item = ClarOption>,
@@ -60,6 +63,7 @@ impl Clar {
     }
 
     /// Returns a resolver that recognizes options followed by option terminator.
+    #[must_use]
     pub fn options_terminator<O>(mut self, options: O, option_terminator: ClarTerminator) -> Self
     where
         O: IntoIterator<Item = ClarOption>,
@@ -70,6 +74,7 @@ impl Clar {
     }
 
     /// Returns a resolver that recognizes arguments.
+    #[must_use]
     pub fn arguments<A>(mut self, arguments: A) -> Self
     where
         A: IntoIterator<Item = ClarArgument>,
@@ -79,6 +84,7 @@ impl Clar {
     }
 
     /// Returns a resolver that recognizes arguments followed by option terminator.
+    #[must_use]
     pub fn arguments_terminator<A>(
         mut self,
         arguments: A,
@@ -93,6 +99,7 @@ impl Clar {
     }
 
     /// Returns a resolver that recognizes options followed by arguments.
+    #[must_use]
     pub fn options_arguments<O, A>(mut self, options: O, arguments: A) -> Self
     where
         O: IntoIterator<Item = ClarOption>,
@@ -103,6 +110,7 @@ impl Clar {
     }
 
     /// Returns a resolver that recognizes options followed by arguments and option terminator.
+    #[must_use]
     pub fn options_arguments_terminator<O, A>(
         mut self,
         options: O,
@@ -119,6 +127,7 @@ impl Clar {
     }
 
     /// Returns a resolver that recognizes commands.
+    #[must_use]
     pub fn commands<C>(mut self, commands: C) -> Self
     where
         C: IntoIterator<Item = ClarCommand>,
@@ -128,6 +137,7 @@ impl Clar {
     }
 
     /// Returns a resolver that recognizes options followed by commands.
+    #[must_use]
     pub fn options_commands<O, C>(mut self, options: O, commands: C) -> Self
     where
         O: IntoIterator<Item = ClarOption>,
@@ -138,6 +148,10 @@ impl Clar {
     }
 
     /// Resolves command line arguments.
+    ///
+    /// # Errors
+    ///
+    /// //TODO Add error description
     pub fn resolve<I, S>(mut self, input: I) -> ClarDiagnosticResult<ClarMatches>
     where
         I: IntoIterator<Item = S>,
@@ -200,19 +214,19 @@ impl Clar {
                         if option.is_standalone() {
                             if let Some(short_label) = option.get_short_label() {
                                 standalone_options_evaluators
-                                    .push(ev_short_option(*short_label, option.into()))
+                                    .push(ev_short_option(short_label, option.into()));
                             }
                             if let Some(long_label) = option.get_long_label() {
                                 standalone_options_evaluators
-                                    .push(ev_long_option(long_label, option.into()))
+                                    .push(ev_long_option(long_label, option.into()));
                             }
                         } else {
                             if let Some(short_label) = option.get_short_label() {
                                 options_evaluators
-                                    .push(ev_short_option(*short_label, option.into()))
+                                    .push(ev_short_option(short_label, option.into()));
                             }
                             if let Some(long_label) = option.get_long_label() {
-                                options_evaluators.push(ev_long_option(long_label, option.into()))
+                                options_evaluators.push(ev_long_option(long_label, option.into()));
                             }
                         }
                     }
@@ -235,7 +249,7 @@ impl Clar {
                     }
                 }
                 ClarItem::Terminator(option_terminator) => {
-                    evaluators.push(ev_option_terminator(option_terminator.into()))
+                    evaluators.push(ev_option_terminator(option_terminator.into()));
                 }
             }
         }

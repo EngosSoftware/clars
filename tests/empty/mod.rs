@@ -8,10 +8,10 @@ fn _0001() {
     //  When: Retrieved the help message.
     //  Then: The expected message should contain only usage.
     eq_text(
-        r#"
+        r"
     Usage: clars
-  "#,
-        Clar::new(APP).resolve(EMPTY_INPUT).unwrap().get_help(),
+  ",
+        &Clar::new(APP).resolve(EMPTY_INPUT).unwrap().get_help(),
     );
 }
 
@@ -21,12 +21,12 @@ fn _0002() {
     //  When: Retrieved the help message.
     //  Then: The expected message should contain description and usage.
     eq_text(
-        r#"
+        r"
     Command line arguments resolver
 
     Usage: clars
-  "#,
-        Clar::new(APP)
+  ",
+        &Clar::new(APP)
             .description("Command line arguments resolver")
             .resolve(EMPTY_INPUT)
             .unwrap()

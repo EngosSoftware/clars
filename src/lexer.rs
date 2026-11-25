@@ -64,7 +64,7 @@ impl Lexer {
             self.tokens.push_back(Token::OptionTerminator(vec![]));
         } else {
             // Parse option name with optional associated value.
-            let (label, value) = self.parse_value(input);
+            let (label, value) = parse_value(input);
             ClarOption::validate_long_label(&label)?;
             self.tokens.push_back(Token::LongOption(label, value));
         }
@@ -77,7 +77,7 @@ impl Lexer {
                 .push_back(Token::Argument(SHORT_PREFIX.to_string()));
         } else {
             // Parse option name with optional associated value.
-            let (option, value) = self.parse_value(input);
+            let (option, value) = parse_value(input);
             let mut chars = option.chars().peekable();
             loop {
                 let label = chars.next().unwrap();
@@ -85,18 +85,17 @@ impl Lexer {
                 if chars.peek().is_none() {
                     self.tokens.push_back(Token::ShortOption(label, value));
                     break;
-                } else {
-                    self.tokens.push_back(Token::ShortOption(label, None));
                 }
+                self.tokens.push_back(Token::ShortOption(label, None));
             }
         }
         Ok(())
     }
+}
 
-    fn parse_value(&self, input: &str) -> (String, Option<String>) {
-        match input.split_once(VALUE_SEPARATOR) {
-            Some((before, after)) => (before.to_string(), Some(after.to_string())),
-            None => (input.to_string(), None),
-        }
+fn parse_value(input: &str) -> (String, Option<String>) {
+    match input.split_once(VALUE_SEPARATOR) {
+        Some((before, after)) => (before.to_string(), Some(after.to_string())),
+        None => (input.to_string(), None),
     }
 }

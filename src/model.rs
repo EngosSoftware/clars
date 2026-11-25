@@ -1,4 +1,11 @@
-use crate::errors::*;
+use crate::errors::{
+    ClarResult, err_command_must_contain_letters_digits_hyphens,
+    err_command_must_start_with_letter, err_default_missing_value_for_flag_option,
+    err_default_value_for_flag_option, err_default_value_for_required_argument,
+    err_invalid_default_missing_value_for_option, err_invalid_default_value_for_option,
+    err_long_option_must_contain_letters_digits_hyphens, err_long_option_must_start_with_letter,
+    err_possible_values_for_flag_option, err_short_option_must_be_letter_or_digit,
+};
 use crate::path::ClarPath;
 use std::collections::HashMap;
 use std::fmt::Write;
@@ -24,8 +31,8 @@ pub struct ClarOption {
     possible_values: Vec<String>,
     /// Maximum number of option occurrences.
     max_occurrences: Option<usize>,
-    /// Help content.
-    help: Option<String>,
+    /// Short help content.
+    help_short: Option<String>,
     /// Long help content.
     help_long: Option<String>,
     /// Path in the definition tree.
@@ -59,31 +66,37 @@ impl ClarOption {
         }
     }
 
-    pub fn short_label(mut self, label: char) -> Self {
+    #[must_use]
+    pub const fn short_label(mut self, label: char) -> Self {
         self.short_label = Some(label);
         self
     }
 
+    #[must_use]
     pub fn long_label(mut self, label: impl AsRef<str>) -> Self {
         self.long_label = Some(label.as_ref().to_string());
         self
     }
 
-    pub fn standalone(mut self) -> Self {
+    #[must_use]
+    pub const fn standalone(mut self) -> Self {
         self.standalone = true;
         self
     }
 
+    #[must_use]
     pub fn default_value(mut self, value: impl AsRef<str>) -> Self {
         self.default_value = Some(value.as_ref().to_string());
         self
     }
 
+    #[must_use]
     pub fn default_missing_value(mut self, value: impl AsRef<str>) -> Self {
         self.default_missing_value = Some(value.as_ref().to_string());
         self
     }
 
+    #[must_use]
     pub fn possible_values<I, S>(mut self, values: I) -> Self
     where
         I: IntoIterator<Item = S>,
@@ -96,33 +109,44 @@ impl ClarOption {
         self
     }
 
-    pub fn max_occurrences(mut self, max_occurrences: usize) -> Self {
+    #[must_use]
+    pub const fn max_occurrences(mut self, max_occurrences: usize) -> Self {
         self.max_occurrences = Some(max_occurrences);
         self
     }
 
+    #[must_use]
     pub fn takes_value(mut self, caption: impl AsRef<str>) -> Self {
         self.takes_value = Some(caption.as_ref().to_string());
         self
     }
 
+    #[must_use]
     pub fn help(mut self, content: impl AsRef<str>) -> Self {
-        self.help = Some(content.as_ref().to_string());
+        self.help_short = Some(content.as_ref().to_string());
         self.help_long = Some(content.as_ref().to_string());
         self
     }
 
+    #[must_use]
+    pub fn help_short(mut self, content: impl AsRef<str>) -> Self {
+        self.help_short = Some(content.as_ref().to_string());
+        self
+    }
+
+    #[must_use]
     pub fn help_long(mut self, content: impl AsRef<str>) -> Self {
         self.help_long = Some(content.as_ref().to_string());
         self
     }
 
-    pub(crate) fn get_short_label(&self) -> &Option<char> {
-        &self.short_label
+    pub(crate) const fn get_short_label(&self) -> Option<char> {
+        self.short_label
     }
 
-    pub fn get_long_label(&self) -> &Option<String> {
-        &self.long_label
+    #[must_use]
+    pub fn get_long_label(&self) -> Option<String> {
+        self.long_label.clone()
     }
 
     pub(crate) fn get_synopsis(&self) -> String {
@@ -144,52 +168,60 @@ impl ClarOption {
         label
     }
 
-    pub fn is_standalone(&self) -> bool {
+    #[must_use]
+    pub const fn is_standalone(&self) -> bool {
         self.standalone
     }
 
-    pub fn get_default_value(&self) -> &Option<String> {
-        &self.default_value
+    #[must_use]
+    pub fn get_default_value(&self) -> Option<String> {
+        self.default_value.clone()
     }
 
-    pub fn get_default_missing_value(&self) -> &Option<String> {
-        &self.default_missing_value
+    #[must_use]
+    pub fn get_default_missing_value(&self) -> Option<String> {
+        self.default_missing_value.clone()
     }
 
-    pub fn get_takes_value(&self) -> &Option<String> {
-        &self.takes_value
+    #[must_use]
+    pub fn get_takes_value(&self) -> Option<String> {
+        self.takes_value.clone()
     }
 
-    pub fn get_possible_values(&self) -> &Vec<String> {
+    #[must_use]
+    pub const fn get_possible_values(&self) -> &Vec<String> {
         &self.possible_values
     }
 
+    #[must_use]
     pub fn get_max_occurrences(&self) -> usize {
         self.max_occurrences.unwrap_or(1)
     }
 
-    pub fn get_help(&self) -> &Option<String> {
-        &self.help
+    #[must_use]
+    pub fn get_help(&self) -> Option<String> {
+        self.help_short.clone()
     }
 
-    pub fn get_help_long(&self) -> &Option<String> {
-        &self.help_long
+    #[must_use]
+    pub fn get_help_long(&self) -> Option<String> {
+        self.help_long.clone()
     }
 
     fn set_path(&mut self, parent: &ClarPath) {
         self.path = parent.join(&self.name);
     }
 
-    pub(crate) fn get_path(&self) -> &ClarPath {
+    pub(crate) const fn get_path(&self) -> &ClarPath {
         &self.path
     }
 
     pub(crate) fn validate(&self) -> ClarResult<()> {
         if let Some(label) = self.get_short_label() {
-            Self::validate_short_label(*label)?;
+            Self::validate_short_label(label)?;
         }
         if let Some(label) = self.get_long_label() {
-            Self::validate_long_label(label)?;
+            Self::validate_long_label(&label)?;
         }
         if self.takes_value.is_none() {
             // Default value MAY be set only when the option is not a flag.
@@ -214,7 +246,7 @@ impl ClarOption {
                 return Err(err_invalid_default_value_for_option(
                     self.get_synopsis(),
                     default_value.to_owned(),
-                    self.possible_values.to_owned(),
+                    self.possible_values.clone(),
                 ));
             }
             if let Some(default_missing_value) = &self.default_missing_value
@@ -223,7 +255,7 @@ impl ClarOption {
                 return Err(err_invalid_default_missing_value_for_option(
                     self.get_synopsis(),
                     default_missing_value.to_owned(),
-                    self.possible_values.to_owned(),
+                    self.possible_values.clone(),
                 ));
             }
         }
@@ -245,7 +277,7 @@ impl ClarOption {
         Ok(())
     }
 
-    pub(crate) fn validate_short_label(ch: char) -> ClarResult<()> {
+    pub(crate) const fn validate_short_label(ch: char) -> ClarResult<()> {
         if !ch.is_ascii_alphanumeric() {
             return Err(err_short_option_must_be_letter_or_digit(ch));
         }
@@ -281,50 +313,60 @@ impl ClarArgument {
         }
     }
 
+    #[must_use]
     pub fn caption(mut self, caption: impl AsRef<str>) -> Self {
         self.caption = caption.as_ref().to_string();
         self
     }
 
+    #[must_use]
     pub fn default_value(mut self, default_value: impl AsRef<str>) -> Self {
         self.default_value = Some(default_value.as_ref().to_string());
         self
     }
 
-    pub fn required(mut self) -> Self {
+    #[must_use]
+    pub const fn required(mut self) -> Self {
         self.required = true;
         self
     }
 
+    #[must_use]
     pub fn help(mut self, help: impl AsRef<str>) -> Self {
         self.help = Some(help.as_ref().to_string());
         self
     }
 
+    #[must_use]
     pub fn help_long(mut self, help_long: impl AsRef<str>) -> Self {
         self.help_long = Some(help_long.as_ref().to_string());
         self
     }
 
+    #[must_use]
     pub fn get_caption(&self) -> &str {
         &self.caption
     }
 
-    pub fn get_default_value(&self) -> &Option<String> {
-        &self.default_value
+    #[must_use]
+    pub fn get_default_value(&self) -> Option<String> {
+        self.default_value.clone()
     }
 
-    pub fn is_required(&self) -> bool {
+    #[must_use]
+    pub const fn is_required(&self) -> bool {
         self.required
     }
 
-    pub fn get_help(&self) -> &Option<String> {
-        &self.help
+    #[must_use]
+    pub fn get_help(&self) -> Option<String> {
+        self.help.clone()
     }
 
-    pub fn get_help_long(&self) -> &Option<String> {
+    #[must_use]
+    pub fn get_help_long(&self) -> Option<String> {
         if self.help_long.is_some() {
-            &self.help_long
+            self.help_long.clone()
         } else {
             self.get_help()
         }
@@ -334,7 +376,8 @@ impl ClarArgument {
         self.path = parent.join(&self.name);
     }
 
-    pub(crate) fn get_path(&self) -> &ClarPath {
+    #[must_use]
+    pub(crate) const fn get_path(&self) -> &ClarPath {
         &self.path
     }
 
@@ -371,23 +414,27 @@ impl ClarCommand {
         }
     }
 
+    #[must_use]
     pub fn help(mut self, help: impl AsRef<str>) -> Self {
         self.help = Some(help.as_ref().to_string());
         self
     }
 
+    #[must_use]
     pub fn help_long(mut self, help_long: impl AsRef<str>) -> Self {
         self.help_long = Some(help_long.as_ref().to_string());
         self
     }
 
     /// Returns a resolver that recognizes an option terminator.
+    #[must_use]
     pub fn terminator(mut self, option_terminator: ClarTerminator) -> Self {
         self.definition.terminator(option_terminator);
         self
     }
 
     /// Returns a resolver that recognizes options.
+    #[must_use]
     pub fn options<O>(mut self, options: O) -> Self
     where
         O: IntoIterator<Item = ClarOption>,
@@ -397,6 +444,7 @@ impl ClarCommand {
     }
 
     /// Returns a resolver that recognizes options followed by option terminator.
+    #[must_use]
     pub fn options_terminator<O>(mut self, options: O, option_terminator: ClarTerminator) -> Self
     where
         O: IntoIterator<Item = ClarOption>,
@@ -407,6 +455,7 @@ impl ClarCommand {
     }
 
     /// Returns a resolver that recognizes arguments.
+    #[must_use]
     pub fn arguments<A>(mut self, arguments: A) -> Self
     where
         A: IntoIterator<Item = ClarArgument>,
@@ -416,6 +465,7 @@ impl ClarCommand {
     }
 
     /// Returns a resolver that recognizes arguments followed by option terminator.
+    #[must_use]
     pub fn arguments_terminator<A>(
         mut self,
         arguments: A,
@@ -430,6 +480,7 @@ impl ClarCommand {
     }
 
     /// Returns a resolver that recognizes options followed by arguments.
+    #[must_use]
     pub fn options_arguments<O, A>(mut self, options: O, arguments: A) -> Self
     where
         O: IntoIterator<Item = ClarOption>,
@@ -440,6 +491,7 @@ impl ClarCommand {
     }
 
     /// Returns a resolver that recognizes options followed by arguments and option terminator.
+    #[must_use]
     pub fn options_arguments_terminator<O, A>(
         mut self,
         options: O,
@@ -456,39 +508,44 @@ impl ClarCommand {
     }
 
     /// Returns a resolver that recognizes commands.
+    #[must_use]
     pub fn commands<C>(mut self, commands: C) -> Self
     where
-        C: IntoIterator<Item = ClarCommand>,
+        C: IntoIterator<Item = Self>,
     {
         self.definition.commands(commands);
         self
     }
 
     /// Returns a resolver that recognizes options followed by commands.
+    #[must_use]
     pub fn options_commands<O, C>(mut self, options: O, commands: C) -> Self
     where
         O: IntoIterator<Item = ClarOption>,
-        C: IntoIterator<Item = ClarCommand>,
+        C: IntoIterator<Item = Self>,
     {
         self.definition.options_commands(options, commands);
         self
     }
 
+    #[must_use]
     pub fn get_name(&self) -> &str {
         &self.name
     }
 
-    pub(crate) fn get_definition(&self) -> &ClarDefinition {
+    pub(crate) const fn get_definition(&self) -> &ClarDefinition {
         &self.definition
     }
 
-    pub fn get_help(&self) -> &Option<String> {
-        &self.help
+    #[must_use]
+    pub fn get_help(&self) -> Option<String> {
+        self.help.clone()
     }
 
-    pub fn get_help_long(&self) -> &Option<String> {
+    #[must_use]
+    pub fn get_help_long(&self) -> Option<String> {
         if self.help_long.is_some() {
-            &self.help_long
+            self.help_long.clone()
         } else {
             self.get_help()
         }
@@ -498,7 +555,7 @@ impl ClarCommand {
         self.path = parent.join(&self.name);
     }
 
-    pub(crate) fn get_path(&self) -> &ClarPath {
+    pub(crate) const fn get_path(&self) -> &ClarPath {
         &self.path
     }
 
@@ -510,25 +567,25 @@ impl ClarCommand {
     fn validate_name(&self) -> ClarResult<()> {
         for (index, ch) in self.name.chars().enumerate() {
             if index == 0 {
-                if !self.is_valid_name_start(ch) {
-                    return Err(err_command_must_start_with_letter(self.name.to_string()));
+                if !is_valid_name_start(ch) {
+                    return Err(err_command_must_start_with_letter(self.name.clone()));
                 }
-            } else if !self.is_valid_name_char(ch) {
+            } else if !is_valid_name_char(ch) {
                 return Err(err_command_must_contain_letters_digits_hyphens(
-                    self.name.to_string(),
+                    self.name.clone(),
                 ));
             }
         }
         Ok(())
     }
+}
 
-    fn is_valid_name_start(&self, ch: char) -> bool {
-        ch.is_ascii_alphabetic()
-    }
+const fn is_valid_name_start(ch: char) -> bool {
+    ch.is_ascii_alphabetic()
+}
 
-    fn is_valid_name_char(&self, ch: char) -> bool {
-        ch.is_ascii_alphanumeric() || ch == '-'
-    }
+const fn is_valid_name_char(ch: char) -> bool {
+    ch.is_ascii_alphanumeric() || ch == '-'
 }
 
 /// Command-line option terminator.
@@ -557,12 +614,14 @@ impl ClarTerminator {
     /// Marks this option terminator as required.
     ///
     /// If the option terminator is not present in the argument list, resolving will fail.
-    pub fn required(mut self) -> Self {
+    #[must_use]
+    pub const fn required(mut self) -> Self {
         self.required = true;
         self
     }
 
-    pub fn is_required(&self) -> bool {
+    #[must_use]
+    pub const fn is_required(&self) -> bool {
         self.required
     }
 
@@ -570,7 +629,7 @@ impl ClarTerminator {
         self.path = parent.join(&self.name);
     }
 
-    pub(crate) fn get_path(&self) -> &ClarPath {
+    pub(crate) const fn get_path(&self) -> &ClarPath {
         &self.path
     }
 }
@@ -592,7 +651,7 @@ pub struct ClarDefinition {
 
 impl ClarDefinition {
     /// Returns a collection of command-line items.
-    pub fn items(&self) -> &Vec<ClarItem> {
+    pub const fn items(&self) -> &Vec<ClarItem> {
         &self.items
     }
 
@@ -706,7 +765,7 @@ impl ClarDefinition {
     }
 
     /// Validates command-line items in definition.
-    fn validate_items(def: &ClarDefinition) -> ClarResult<()> {
+    fn validate_items(def: &Self) -> ClarResult<()> {
         for item in def.items() {
             match item {
                 ClarItem::Commands(commands) => {
@@ -776,7 +835,7 @@ impl ClarDefinition {
     }
 
     pub fn find_command<'a>(&'a self, path: &'a ClarPath) -> Option<&'a ClarCommand> {
-        self.get_commands().get(path).cloned()
+        self.get_commands().get(path).copied()
     }
 }
 

@@ -26,9 +26,10 @@ fn pass<I, S>(
     S: AsRef<str>,
 {
     let matches = clar(config).resolve(input).unwrap();
-    assert_eq!(expected.0, matches.is_present(NAME));
-    assert_eq!(expected.1, matches.get_count(NAME));
-    assert_eq!(expected.2, matches.get_values(NAME));
+    let (expected_is_present, expected_count, expected_values) = expected;
+    assert_eq!(expected_is_present, matches.is_present(NAME));
+    assert_eq!(expected_count, matches.get_count(NAME));
+    assert_eq!(expected_values, matches.get_values(NAME));
 }
 
 fn fail<I, S>(config: (bool, Option<String>), input: I, expected: &str)
@@ -166,12 +167,12 @@ fn _0013() {
 #[test]
 fn getting_help_should_work() {
     assert_eq!(
-        r#"
+        r"
 Usage: clars  [ARGS]
 
 Arguments:
   [FILE]  File short
-"#
+"
         .trim_start(),
         clar((false, None))
             .resolve(EMPTY_INPUT)
@@ -179,7 +180,7 @@ Arguments:
             .get_help()
             .chars()
             .collect::<String>()
-    )
+    );
 }
 
 #[test]

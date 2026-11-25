@@ -55,12 +55,12 @@ fn short_option_flag_should_not_accept_values() {
         diagnostic.to_owned().to_string()
     );
     eq_text(
-        r#"
+        r"
     error: option '-h' does not accept a value
 
     Usage: clars [OPTIONS]
-  "#,
-        diagnostic.text().clone(),
+  ",
+        diagnostic.text(),
     );
 }
 
@@ -75,12 +75,12 @@ fn long_option_flag_should_not_accept_values() {
         diagnostic.to_owned().to_string()
     );
     eq_text(
-        r#"
+        r"
     error: option '--help' does not accept a value
 
     Usage: clars [OPTIONS]
-  "#,
-        diagnostic.text().clone(),
+  ",
+        diagnostic.text(),
     );
 }
 
@@ -88,11 +88,11 @@ fn long_option_flag_should_not_accept_values() {
 fn short_option_may_require_a_value() {
     eq_diag(
         "a value is required for '-c <WHEN>' but none was supplied",
-        r#"
+        r"
     error: a value is required for '-c <WHEN>' but none was supplied
 
     Usage: clars [OPTIONS]
-  "#,
+  ",
         Clar::new(APP)
             .options(vec![ClarOption::short("color", 'c').takes_value("WHEN")])
             .resolve(["-c"])
@@ -104,11 +104,11 @@ fn short_option_may_require_a_value() {
 fn long_option_may_require_a_value() {
     eq_diag(
         "a value is required for '--color <WHEN>' but none was supplied",
-        r#"
+        r"
     error: a value is required for '--color <WHEN>' but none was supplied
 
     Usage: clars [OPTIONS]
-  "#,
+  ",
         clar()
             .options(vec![ClarOption::long("color", "color").takes_value("WHEN")])
             .resolve(["--color"])
@@ -296,9 +296,9 @@ fn _0011() {
     //  Then: Report an error.
     eq_diag(
         "using default value for flag option '-c' is not allowed",
-        r#"
+        r"
       error: using default value for flag option '-c' is not allowed
-    "#,
+    ",
         Clar::new(APP)
             .options(vec![ClarOption::short("color", 'c').default_value("auto")])
             .resolve(EMPTY_INPUT)
@@ -306,9 +306,9 @@ fn _0011() {
     );
     eq_diag(
         "using default value for flag option '--color' is not allowed",
-        r#"
+        r"
       error: using default value for flag option '--color' is not allowed
-    "#,
+    ",
         Clar::new(APP)
             .options(vec![
                 ClarOption::long("color", "color").default_value("auto"),
@@ -318,9 +318,9 @@ fn _0011() {
     );
     eq_diag(
         "using default value for flag option '--color' is not allowed",
-        r#"
+        r"
       error: using default value for flag option '--color' is not allowed
-    "#,
+    ",
         Clar::new(APP)
             .options(vec![
                 ClarOption::new("color", 'c', "color").default_value("auto"),
@@ -337,9 +337,9 @@ fn _0012() {
     //  Then: Report an error.
     eq_diag(
         "using default missing value for flag option '-c' is not allowed",
-        r#"
+        r"
       error: using default missing value for flag option '-c' is not allowed
-    "#,
+    ",
         Clar::new(APP)
             .options(vec![
                 ClarOption::short("color", 'c').default_missing_value("always"),
@@ -349,9 +349,9 @@ fn _0012() {
     );
     eq_diag(
         "using default missing value for flag option '--color' is not allowed",
-        r#"
+        r"
       error: using default missing value for flag option '--color' is not allowed
-    "#,
+    ",
         Clar::new(APP)
             .options(vec![
                 ClarOption::long("color", "color").default_missing_value("always"),
@@ -361,9 +361,9 @@ fn _0012() {
     );
     eq_diag(
         "using default missing value for flag option '--color' is not allowed",
-        r#"
+        r"
       error: using default missing value for flag option '--color' is not allowed
-    "#,
+    ",
         Clar::new(APP)
             .options(vec![
                 ClarOption::new("color", 'c', "color").default_missing_value("always"),
@@ -380,9 +380,9 @@ fn _0013() {
     //  Then: Report an error.
     eq_diag(
         "using possible values for flag option '-c' is not allowed",
-        r#"
+        r"
       error: using possible values for flag option '-c' is not allowed
-    "#,
+    ",
         Clar::new(APP)
             .options(vec![
                 ClarOption::short("color", 'c').possible_values(["auto", "always", "never"]),
@@ -392,9 +392,9 @@ fn _0013() {
     );
     eq_diag(
         "using possible values for flag option '--color' is not allowed",
-        r#"
+        r"
       error: using possible values for flag option '--color' is not allowed
-    "#,
+    ",
         Clar::new(APP)
             .options(vec![
                 ClarOption::long("color", "color").possible_values(["auto", "always", "never"]),
@@ -404,9 +404,9 @@ fn _0013() {
     );
     eq_diag(
         "using possible values for flag option '--color' is not allowed",
-        r#"
+        r"
       error: using possible values for flag option '--color' is not allowed
-    "#,
+    ",
         Clar::new(APP)
             .options(vec![
                 ClarOption::new("color", 'c', "color").possible_values(["auto", "always", "never"]),
@@ -423,10 +423,10 @@ fn _0014() {
     //  Then: Report an error.
     eq_diag(
         "invalid default value 'brown' for '-c <WHEN>'\n  [possible values: auto, always, never]",
-        r#"
+        r"
       error: invalid default value 'brown' for '-c <WHEN>'
         [possible values: auto, always, never]
-    "#,
+    ",
         Clar::new(APP)
             .options(vec![
                 ClarOption::short("color", 'c')
@@ -446,10 +446,10 @@ fn _0015() {
     //  Then: Report an error.
     eq_diag(
         "invalid default missing value 'brown' for '-c [<WHEN>]'\n  [possible values: auto, always, never]",
-        r#"
+        r"
       error: invalid default missing value 'brown' for '-c [<WHEN>]'
         [possible values: auto, always, never]
-    "#,
+    ",
         Clar::new(APP)
             .options(vec![
                 ClarOption::short("color", 'c')
@@ -469,12 +469,12 @@ fn _0016() {
     //  Then: Report an error.
     eq_diag(
         "invalid value 'brown' for '-c <WHEN>'\n  [possible values: auto, always, never]",
-        r#"
+        r"
       error: invalid value 'brown' for '-c <WHEN>'
         [possible values: auto, always, never]
 
       Usage: clars [OPTIONS]
-    "#,
+    ",
         Clar::new(APP)
             .options(vec![
                 ClarOption::short("color", 'c')
@@ -486,12 +486,12 @@ fn _0016() {
     );
     eq_diag(
         "invalid value 'brown' for '--color <WHEN>'\n  [possible values: auto, always, never]",
-        r#"
+        r"
       error: invalid value 'brown' for '--color <WHEN>'
         [possible values: auto, always, never]
 
       Usage: clars [OPTIONS]
-    "#,
+    ",
         Clar::new(APP)
             .options(vec![
                 ClarOption::long("color", "color")

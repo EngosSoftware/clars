@@ -40,16 +40,17 @@ fn argument(name: &str, default_value: Option<String>, required: bool) -> ClarAr
     argument
 }
 
-fn eq_text(expected: impl AsRef<str>, text: Text) {
+fn eq_text(expected: impl AsRef<str>, text: &Text) {
     assert_eq!(indoc(expected.as_ref()), text.characters());
 }
 
+#[expect(clippy::needless_pass_by_value)]
 fn eq_diag(
     expected_msg: impl AsRef<str>,
     expected_text: impl AsRef<str>,
     diagnostic: ClarDiagnostic,
 ) {
-    assert_eq!(expected_msg.as_ref(), diagnostic.to_owned().to_string());
+    assert_eq!(expected_msg.as_ref(), (*diagnostic).to_string());
     assert_eq!(
         indoc(expected_text.as_ref()),
         diagnostic.text().characters()

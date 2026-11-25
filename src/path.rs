@@ -42,12 +42,12 @@ impl IntoClarPath for &str {
 
 impl IntoClarPath for &[&str] {
     fn into_clar_path(self) -> ClarPath {
-        ClarPath(self.iter().map(|s| s.to_string()).collect())
+        ClarPath(self.iter().map(|s| (*s).to_string()).collect())
     }
 }
 
 impl<const N: usize> IntoClarPath for [&str; N] {
     fn into_clar_path(self) -> ClarPath {
-        ClarPath(self.iter().map(|s| s.to_string()).collect())
+        ClarPath(self.iter().map(|s| (*s).to_string()).collect())
     }
 }

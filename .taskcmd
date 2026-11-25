@@ -5,6 +5,11 @@
 .vars
   .RUST_TOOLCHAIN +1.88.0
 
+.profiles
+  .stable
+    .vars
+      .RUST_TOOLCHAIN +1.99.0
+
 .tasks
 
   .all
@@ -12,6 +17,7 @@
     .task fmt
     .task build
     .task clippy
+    .task pedantic
     .task test
     .task doc
     .task cov
@@ -81,7 +87,7 @@
   .pedantic
     .desc Runs pedantic linter
     .cmd cargo {{RUST_TOOLCHAIN}} clippy --all-targets -- \
-         -D warnings -W clippy::pedantic -W clippy::nursery
+         -D warnings -W clippy::pedantic -W clippy::nursery -W clippy::cargo
 
   .readme
     .desc Regenerates README.md file

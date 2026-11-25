@@ -5,20 +5,20 @@ fn _0001() {
     // Given: Option that takes a value without default missing value.
     // When: Displaying help.
     // Then: Proper value label in sharp brackets should be displayed.
-    let expected = r#"
+    let expected = r"
     Usage: clars [OPTIONS]
 
     Options:
       -c <WHEN>  Coloring
-  "#;
+  ";
     let matches = Clar::new(APP)
         .options([ClarOption::short("color", 'c')
             .takes_value("WHEN")
             .help("Coloring")])
         .resolve(EMPTY_INPUT)
         .unwrap();
-    eq_text(expected, matches.get_help());
-    eq_text(expected, matches.get_help_long());
+    eq_text(expected, &matches.get_help());
+    eq_text(expected, &matches.get_help_long());
 }
 
 #[test]
@@ -34,22 +34,22 @@ fn _0002() {
         .resolve(EMPTY_INPUT)
         .unwrap();
     eq_text(
-        r#"
+        r"
     Usage: clars [OPTIONS]
 
     Options:
       -c [<WHEN>]  Coloring [implicit: always]
-  "#,
-        matches.get_help(),
+  ",
+        &matches.get_help(),
     );
     eq_text(
-        r#"
+        r"
     Usage: clars [OPTIONS]
 
     Options:
       -c [<WHEN>]  Coloring
                      [implicit: always]
-  "#,
-        matches.get_help_long(),
+  ",
+        &matches.get_help_long(),
     );
 }

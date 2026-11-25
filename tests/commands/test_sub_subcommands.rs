@@ -33,9 +33,9 @@ fn all_test_cases() -> [Vec<&'static str>; 12] {
     ]
 }
 
-fn check(input: Vec<&str>) {
+fn check(input: &[&str]) {
     for test_case in all_test_cases() {
-        let matches = clar().resolve(input.as_slice()).unwrap();
+        let matches = clar().resolve(input).unwrap();
         assert_eq!(test_case == input, matches.is_present(test_case.as_slice()));
     }
 }
@@ -43,7 +43,7 @@ fn check(input: Vec<&str>) {
 #[test]
 fn _0001() {
     for test_case in all_test_cases() {
-        check(test_case);
+        check(&test_case);
     }
 }
 
