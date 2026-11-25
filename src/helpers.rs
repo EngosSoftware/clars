@@ -15,6 +15,11 @@ use std::path::Path;
 /// assert_eq!(expected_app_args, args);
 ///
 /// ```
+///
+/// # Panics
+///
+/// TODO Get rid of panics
+#[must_use]
 pub fn get_app_and_args() -> (String, Vec<String>) {
     let mut args = std::env::args();
     let name = Path::new(&args.next().expect("expected at least one argument"))
@@ -30,7 +35,7 @@ pub fn get_more_info_hint(cm: ColorMode, options: &[impl AsRef<str>]) -> Text {
     let mut text = Text::new(cm).s("For more information, try ");
     for (index, option) in options.iter().enumerate() {
         if index > 0 {
-            text += " or "
+            text += " or ";
         }
         text += Text::new(cm)
             .s("'")

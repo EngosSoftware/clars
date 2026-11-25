@@ -12,7 +12,7 @@ fn _0001() {
             .get_help()
             .chars()
             .collect::<String>()
-    )
+    );
 }
 
 #[test]
@@ -27,5 +27,5 @@ fn _0002() {
             .get_help()
             .chars()
             .collect::<String>()
-    )
+    );
 }

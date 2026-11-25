@@ -20,14 +20,14 @@ pub struct ClarMatches {
 }
 
 impl ClarMatches {
-    pub(crate) fn new(
+    pub(crate) const fn new(
         app: String,
         description: Option<String>,
         values: Vec<Value>,
         definition: ClarDefinition,
         cm: ColorMode,
     ) -> Self {
-        ClarMatches {
+        Self {
             app,
             description,
             values,
@@ -81,7 +81,7 @@ impl ClarMatches {
             .values
             .iter()
             .filter(|v| path.eq(v.path()))
-            .flat_map(|v| v.value())
+            .flat_map(Value::value)
             .collect::<Vec<Option<String>>>();
         if values.is_empty()
             && let value @ Some(_) = self.default_value(&path)
@@ -97,20 +97,22 @@ impl ClarMatches {
         self.get_values(path).first().cloned().flatten()
     }
 
+    #[must_use]
     pub fn get_help(&self) -> Text {
         messages::get_help_text(
             &self.app,
-            &self.description,
+            self.description.clone(),
             &self.definition,
             false,
             self.cm,
         )
     }
 
+    #[must_use]
     pub fn get_help_long(&self) -> Text {
         messages::get_help_text(
             &self.app,
-            &self.description,
+            self.description.clone(),
             &self.definition,
             true,
             self.cm,
@@ -143,14 +145,14 @@ impl ClarMatches {
                 ClarItem::Options(options) => {
                     for option in options {
                         if option.get_path() == path && option.get_takes_value().is_some() {
-                            return option.get_default_value().clone();
+                            return option.get_default_value();
                         }
                     }
                 }
                 ClarItem::Arguments(arguments) => {
                     for argument in arguments {
                         if argument.get_path() == path {
-                            return argument.get_default_value().clone();
+                            return argument.get_default_value();
                         }
                     }
                 }

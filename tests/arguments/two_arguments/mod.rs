@@ -16,8 +16,8 @@ fn pass<I, S>(
     config1: (bool, Option<String>),
     config2: (bool, Option<String>),
     input: I,
-    expected1: (bool, usize, Vec<Option<String>>),
-    expected2: (bool, usize, Vec<Option<String>>),
+    expected1: &(bool, usize, Vec<Option<String>>),
+    expected2: &(bool, usize, Vec<Option<String>>),
 ) where
     I: IntoIterator<Item = S>,
     S: AsRef<str>,
@@ -55,8 +55,8 @@ fn _0001() {
         (true, None),
         (true, None),
         ["X", "Y"],
-        (true, 1, vec![some!("X")]),
-        (true, 1, vec![some!("Y")]),
+        &(true, 1, vec![some!("X")]),
+        &(true, 1, vec![some!("Y")]),
     );
 }
 

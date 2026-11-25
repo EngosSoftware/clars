@@ -12,6 +12,7 @@
     .task fmt
     .task build
     .task clippy
+    .task pedantic
     .task test
     .task doc
     .task cov

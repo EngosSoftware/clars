@@ -25,7 +25,7 @@ pub fn get_error_text(
 
 pub fn get_help_text(
     app: &str,
-    description: &Option<String>,
+    description: Option<String>,
     def: &ClarDefinition,
     detailed: bool,
     cm: ColorMode,
@@ -40,28 +40,29 @@ pub fn get_help_text_for_command(
     detailed: bool,
     cm: ColorMode,
 ) -> Text {
-    if let Some(command) = def.find_command(path) {
-        get_description(command.get_help(), cm)
-            + get_usage(app, path.names(), command.get_definition(), cm)
-            + get_details(command.get_definition(), detailed, cm)
-    } else {
-        error_label(Color::Magenta, cm)
-            + Text::new(cm)
-                .s("command '")
-                .yellow()
-                .bold()
-                .s(path)
-                .reset()
-                .s("' is not defined")
-    }
+    def.find_command(path).map_or_else(
+        || {
+            error_label(Color::Magenta, cm)
+                + Text::new(cm)
+                    .s("command '")
+                    .yellow()
+                    .bold()
+                    .s(path)
+                    .r("' is not defined")
+        },
+        |command| {
+            get_description(command.get_help(), cm)
+                + get_usage(app, path.names(), command.get_definition(), cm)
+                + get_details(command.get_definition(), detailed, cm)
+        },
+    )
 }
 
-fn get_description(description: &Option<String>, cm: ColorMode) -> Text {
-    if let Some(description) = description {
-        Text::new(cm).s(description).s("\n\n")
-    } else {
-        Text::new(cm)
-    }
+fn get_description(description: Option<String>, cm: ColorMode) -> Text {
+    description.map_or_else(
+        || Text::new(cm),
+        |description| Text::new(cm).s(description).s("\n\n"),
+    )
 }
 
 fn get_usage(app: &str, names: &[String], def: &ClarDefinition, cm: ColorMode) -> Text {
@@ -170,10 +171,10 @@ fn get_details_for_options(options: &[ClarOption], detailed: bool, cm: ColorMode
         .map(|option| get_caption_for_option(option, cm))
         .collect::<Vec<Text>>();
     // Calculate the maximum with of the column where all captions fit.
-    let column_width = captions.iter().map(|text| text.count()).max().unwrap_or(0);
+    let column_width = captions.iter().map(Text::count).max().unwrap_or(0);
     // Prepare detailed descriptions for all options.
     for (option, caption) in options.iter().zip(captions) {
-        // Prepare possible values clause.
+        // Prepare possible values' clause.
         let option_hints = option_hints(option, detailed);
         let details = if detailed {
             format!(
@@ -193,7 +194,7 @@ fn get_details_for_options(options: &[ClarOption], detailed: bool, cm: ColorMode
                 + INDENT
                 + caption.fill(' ', column_width)
                 + DISTANCE
-                + get_indented_column(details, column_width)
+                + get_indented_column(&details, column_width)
                 + NL;
         }
     }
@@ -208,16 +209,13 @@ fn get_details_for_subcommands(commands: &[ClarCommand], detailed: bool, cm: Col
         .map(|subcommand| get_caption_for_command(subcommand, cm))
         .collect::<Vec<Text>>();
     // Calculate the maximum with of the column where all captions fit.
-    let column_width = captions.iter().map(|t| t.count()).max().unwrap_or(0);
+    let column_width = captions.iter().map(Text::count).max().unwrap_or(0);
     // Prepare detailed descriptions.
     for (command, caption) in commands.iter().zip(captions) {
         let details = if detailed {
-            get_indented_column(
-                command.get_help_long().clone().unwrap_or_default(),
-                column_width,
-            )
+            get_indented_column(&command.get_help_long().unwrap_or_default(), column_width)
         } else {
-            get_indented_column(command.get_help().clone().unwrap_or_default(), column_width)
+            get_indented_column(&command.get_help().unwrap_or_default(), column_width)
         };
         text += Text::new(cm) + INDENT + caption.fill(' ', column_width) + DISTANCE + details + NL;
     }
@@ -233,17 +231,17 @@ fn get_details_for_arguments(arguments: &[ClarArgument], detailed: bool, cm: Col
         .map(|a| get_caption_for_argument(a, cm))
         .collect::<Vec<Text>>();
     // Calculate the maximum with of the column where all captions fit.
-    let column_width = captions.iter().map(|t| t.count()).max().unwrap_or(0);
+    let column_width = captions.iter().map(Text::count).max().unwrap_or(0);
     // Prepare detailed descriptions.
     for (argument, caption) in arguments.iter().zip(captions) {
         let details = if detailed {
             get_indented_column(
-                argument.get_help_long().clone().unwrap_or_default(),
+                &argument.get_help_long().clone().unwrap_or_default(),
                 column_width,
             )
         } else {
             get_indented_column(
-                argument.get_help().clone().unwrap_or_default(),
+                &argument.get_help().clone().unwrap_or_default(),
                 column_width,
             )
         };
@@ -319,7 +317,7 @@ fn get_caption_for_argument(argument: &ClarArgument, cm: ColorMode) -> Text {
     }
 }
 
-fn get_indented_column(input: String, column_width: usize) -> String {
+fn get_indented_column(input: &str, column_width: usize) -> String {
     let mut text = String::new();
     for (index, line) in input.lines().enumerate() {
         if index > 0 {
@@ -379,9 +377,8 @@ fn option_hints(option: &ClarOption, long_help: bool) -> String {
             option.get_help().is_some(),
             option.get_help_long().is_some(),
         ) {
-            (false, false, _) => "",
             (false, true, _) => " ",
-            (true, _, false) => "",
+            (true, _, false) | (false, false, _) => "",
             (true, _, true) => "\n  ",
         };
         format!("{prefix}{hints}")

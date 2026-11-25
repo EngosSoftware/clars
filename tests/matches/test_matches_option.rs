@@ -7,7 +7,7 @@ fn option(
 ) -> ClarOption {
     let mut option = ClarOption::new("color", 'c', "color").max_occurrences(2);
     if takes_value {
-        option = option.takes_value("WHEN")
+        option = option.takes_value("WHEN");
     }
     if let Some(value) = default_value {
         option = option.default_value(value);
@@ -66,7 +66,7 @@ fn command_line(input: &Input) -> Vec<&str> {
     }
 }
 
-fn expected_error_message(input: &Input) -> Option<&str> {
+const fn expected_error_message(input: &Input) -> Option<&str> {
     match (
         input.takes_value,
         input.value_provided,
@@ -80,11 +80,11 @@ fn expected_error_message(input: &Input) -> Option<&str> {
     }
 }
 
-fn expected_is_present(input: &Input) -> bool {
+const fn expected_is_present(input: &Input) -> bool {
     input.appearances > 0
 }
 
-fn expected_count(input: &Input) -> usize {
+const fn expected_count(input: &Input) -> usize {
     input.appearances
 }
 

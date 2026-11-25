@@ -7,9 +7,9 @@ fn _0001() {
     //  Then: Validation error must be returned with proper message.
     eq_diag(
         "short option must be a letter or digit, but '-$' found",
-        r#"
+        r"
       error: short option must be a letter or digit, but '-$' found
-    "#,
+    ",
         Clar::new(APP)
             .options([ClarOption::short("color", '$')])
             .resolve(EMPTY_INPUT)
@@ -24,9 +24,9 @@ fn _0002() {
     //  Then: Validation error must be returned with proper message.
     eq_diag(
         "long option must contain letters, digits or hyphens but '--colo®' found",
-        r#"
+        r"
       error: long option must contain letters, digits or hyphens but '--colo®' found
-    "#,
+    ",
         Clar::new(APP)
             .options([ClarOption::long("color", "colo®")])
             .resolve(EMPTY_INPUT)
@@ -44,30 +44,30 @@ fn _0003() {
         .resolve(EMPTY_INPUT)
         .unwrap();
     eq_text(
-        r#"
+        r"
     A
 
     Usage: clars a
-  "#,
-        matches.get_help_command("a"),
+  ",
+        &matches.get_help_command("a"),
     );
     eq_text(
-        r#"
+        r"
     A
 
     Usage: clars a
-  "#,
-        matches.get_help_long_command("a"),
+  ",
+        &matches.get_help_long_command("a"),
     );
     eq_text(
-        r#"
-    error: command 'b' is not defined"#,
-        matches.get_help_command("b"),
+        r"
+    error: command 'b' is not defined",
+        &matches.get_help_command("b"),
     );
     eq_text(
-        r#"
-    error: command 'b' is not defined"#,
-        matches.get_help_long_command("b"),
+        r"
+    error: command 'b' is not defined",
+        &matches.get_help_long_command("b"),
     );
 }
 
@@ -83,12 +83,12 @@ fn _0004() {
         .resolve(EMPTY_INPUT)
         .unwrap();
     eq_text(
-        r#"error: command 'a' is not defined"#,
-        matches.get_help_command("a"),
+        r"error: command 'a' is not defined",
+        &matches.get_help_command("a"),
     );
     eq_text(
-        r#"error: command 'a' is not defined"#,
-        matches.get_help_long_command("a"),
+        r"error: command 'a' is not defined",
+        &matches.get_help_long_command("a"),
     );
 }
 
@@ -99,9 +99,9 @@ fn _0005() {
     //  Then: Validation error must be returned with proper message.
     eq_diag(
         "short option must be a letter or digit, but '-$' found",
-        r#"
+        r"
       error: short option must be a letter or digit, but '-$' found
-    "#,
+    ",
         Clar::new(APP)
             .commands([ClarCommand::new("a").options([ClarOption::short("color", '$')])])
             .resolve(EMPTY_INPUT)
@@ -116,11 +116,11 @@ fn _0006() {
     //  Then: Error must be returned with a proper message.
     eq_diag(
         "option '-c' can occur at most 1 time, found 2",
-        r#"
+        r"
       error: option '-c' can occur at most 1 time, found 2
 
       Usage: clars [OPTIONS]
-    "#,
+    ",
         Clar::new(APP)
             .options([ClarOption::short("color", 'c')])
             .resolve(["-c", "-c"])
@@ -135,11 +135,11 @@ fn _0007() {
     //  Then: Error must be returned with a proper message.
     eq_diag(
         "option '--color' can occur at most 1 time, found 2",
-        r#"
+        r"
       error: option '--color' can occur at most 1 time, found 2
 
       Usage: clars [OPTIONS]
-    "#,
+    ",
         Clar::new(APP)
             .options([ClarOption::long("color", "color")])
             .resolve(["--color", "--color"])
@@ -154,11 +154,11 @@ fn _0008() {
     //  Then: Error must be returned with a proper message.
     eq_diag(
         "option '--color' can occur at most 1 time, found 2",
-        r#"
+        r"
       error: option '--color' can occur at most 1 time, found 2
 
       Usage: clars [OPTIONS]
-    "#,
+    ",
         Clar::new(APP)
             .options([ClarOption::new("color", 'c', "color")])
             .resolve(["-c", "--color"])
@@ -173,11 +173,11 @@ fn _0009() {
     //  Then: Error must be returned with a proper message.
     eq_diag(
         "option '-c' can occur at most 1 time, found 2",
-        r#"
+        r"
       error: option '-c' can occur at most 1 time, found 2
 
       Usage: clars [OPTIONS]
-    "#,
+    ",
         Clar::new(APP)
             .options([ClarOption::short("color", 'c')])
             .resolve(["-c", "-c"])
@@ -192,11 +192,11 @@ fn _0010() {
     //  Then: Error must be returned with a proper message.
     eq_diag(
         "option '--color' can occur at most 1 time, found 2",
-        r#"
+        r"
       error: option '--color' can occur at most 1 time, found 2
 
       Usage: clars [OPTIONS]
-    "#,
+    ",
         Clar::new(APP)
             .options([ClarOption::long("color", "color")])
             .resolve(["--color", "--color"])
@@ -211,11 +211,11 @@ fn _0011() {
     //  Then: Error must be returned with a proper message.
     eq_diag(
         "option '-c' can occur at most 5 times, found 7",
-        r#"
+        r"
       error: option '-c' can occur at most 5 times, found 7
 
       Usage: clars [OPTIONS]
-    "#,
+    ",
         Clar::new(APP)
             .options([ClarOption::short("color", 'c').max_occurrences(5)])
             .resolve(["-c", "-c", "-c", "-c", "-c", "-c", "-c"])

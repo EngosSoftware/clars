@@ -72,9 +72,9 @@ fn _0005() {
     // The name of this command is invalid.
     eq_diag(
         "command name must contain letters, digits or hyphens but 'a$' found",
-        r#"
+        r"
       error: command name must contain letters, digits or hyphens but 'a$' found
-    "#,
+    ",
         Clar::new(APP)
             .commands([ClarCommand::new("a$")])
             .resolve(["a$"])
@@ -82,9 +82,9 @@ fn _0005() {
     );
     eq_diag(
         "command name must start with a letter, but '0a' found",
-        r#"
+        r"
       error: command name must start with a letter, but '0a' found
-    "#,
+    ",
         Clar::new(APP)
             .commands([ClarCommand::new("0a")])
             .resolve(["0a"])
