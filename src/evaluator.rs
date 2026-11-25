@@ -1,5 +1,5 @@
 use crate::errors::{
-    err_invalid_value_for_option, err_long_option_does_not_accept_value,
+    ClarResult, err_invalid_value_for_option, err_long_option_does_not_accept_value,
     err_long_option_must_be_used_alone, err_long_option_requires_value,
     err_missing_required_argument, err_missing_required_terminator,
     err_short_option_does_not_accept_value, err_short_option_must_be_used_alone,
@@ -8,7 +8,7 @@ use crate::errors::{
 };
 use crate::lexer::Token;
 use crate::path::ClarPath;
-use crate::{ClarArgument, ClarCommand, ClarOption, ClarResult, ClarTerminator};
+use crate::{ClarArgument, ClarCommand, ClarOption, ClarTerminator};
 use std::collections::VecDeque;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -329,7 +329,7 @@ pub fn ev_argument(argument: EvalArgument) -> Evaluator {
             },
             None => {
                 if argument.required {
-                    Err(err_missing_required_argument(argument.caption.clone()))
+                    Err(err_missing_required_argument(&argument.caption))
                 } else {
                     Ok(Status::NoMatch)
                 }

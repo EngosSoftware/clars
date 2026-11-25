@@ -294,8 +294,8 @@ impl ClarError {
 // Error functions
 //-----------------------------------------------------------------------------
 
-pub fn err_missing_required_argument(caption: impl AsRef<str>) -> ClarError {
-    ClarError::MissingRequiredArgument(caption.as_ref().to_string())
+pub fn err_missing_required_argument(caption: &str) -> ClarError {
+    ClarError::MissingRequiredArgument(caption.to_string())
 }
 
 pub const fn err_missing_required_terminator() -> ClarError {
