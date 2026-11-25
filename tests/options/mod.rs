@@ -60,7 +60,7 @@ fn short_option_flag_should_not_accept_values() {
 
     Usage: clars [OPTIONS]
   ",
-        &diagnostic.text().clone(),
+        diagnostic.text(),
     );
 }
 
@@ -80,7 +80,7 @@ fn long_option_flag_should_not_accept_values() {
 
     Usage: clars [OPTIONS]
   ",
-        &diagnostic.text().clone(),
+        diagnostic.text(),
     );
 }
 
