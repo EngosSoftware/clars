@@ -1,15 +1,15 @@
 [package]
 name = "clars"
-version = "0.4.0"
+version = "0.5.0"
 authors = ["Dariusz Depta <depta@engos.de>"]
 description = "Command-line arguments resolver"
 documentation = "https://docs.rs/clars"
 repository = "https://github.com/EngosSoftware/clars.git"
 keywords = ["command", "line", "arguments", "resolver"]
 categories = ["command-line-utilities"]
+license = "MIT OR Apache-2.0"
 rust-version = "1.88.0"
 edition = "2024"
-license = "MIT OR Apache-2.0"
 include = [
     "src/**",
     "tests/**",
